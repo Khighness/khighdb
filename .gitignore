@@ -1,0 +1,6 @@
+.idea/
+/testdata/
+.out
+.log
+.exe
+.DS_Store
