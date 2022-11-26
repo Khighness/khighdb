@@ -1,6 +1,7 @@
 package store
 
 import (
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -11,6 +12,23 @@ import (
 
 // @Author KHighness
 // @Update 2022-11-16
+
+func initDir() string {
+	path := strings.ReplaceAll("testdata/khighdb", "/", string(os.PathSeparator))
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		panic(err)
+	}
+	dir, err := ioutil.ReadDir(path)
+	if err != nil {
+		panic(err)
+	}
+	for _, file := range dir {
+		if err := os.Remove(path + string(os.PathSeparator) + file.Name()); err != nil {
+			panic(err)
+		}
+	}
+	return path
+}
 
 func TestNewDBFile(t *testing.T) {
 	path := strings.ReplaceAll("testdata/khighdb", "/", string(os.PathSeparator))
@@ -56,18 +74,16 @@ func TestNewDBFile(t *testing.T) {
 }
 
 func TestDBFile_Read(t *testing.T) {
-	path := strings.ReplaceAll("testdata/khighdb", "/", string(os.PathSeparator))
-	os.MkdirAll(path, os.ModePerm)
-	defer os.RemoveAll(path)
+	path := initDir()
 
 	tt := func(method FileRWMethod, fileId uint32) {
 		offset := writeForRead(path, method)
-		file, err := NewDBFile(path, fileId, method, 1024, String)
+		dbFile, err := NewDBFile(path, fileId, method, 1024, String)
 		if err != nil {
 			panic(err)
 		}
 		for _, off := range offset {
-			e, err := file.Read(off)
+			e, err := dbFile.Read(off)
 			assert.Nil(t, err)
 			t.Logf("%s: %+v", e.Meta.Key, e)
 		}
@@ -84,10 +100,10 @@ func TestDBFile_Read(t *testing.T) {
 func writeForRead(path string, method FileRWMethod) []int64 {
 	deadline := time.Now().Add(time.Second * 100).Unix()
 	entries := []*Entry{
-		NewEntryWithTxn([]byte("key-1"), []byte("val-1"), []byte("extra-something"), 101, String, 1),
-		NewEntryWithoutExtra([]byte("key-2"), []byte("val-2"), String, 0),
-		NewEntry([]byte("key-3"), []byte("val-3"), []byte("extra-something"), String, 0),
-		NewEntryWithExpire([]byte("key-4"), []byte("val-4"), deadline, String, 0),
+		NewEntryWithoutExtra([]byte("key-1"), []byte("val-1"), String, 0),
+		NewEntry([]byte("key-2"), []byte("val-2"), []byte("extra-something"), String, 0),
+		NewEntryWithExpire([]byte("key-3"), []byte("val-3"), deadline, String, 0),
+		NewEntryWithTxn([]byte("key-4"), []byte("val-4"), []byte("extra-something"), 101, String, 1),
 	}
 
 	dbFile, err := NewDBFile(path, 0, method, 1024, String)

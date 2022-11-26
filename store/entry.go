@@ -51,7 +51,7 @@ type Entry struct {
 	Meta      *Meta
 	state     uint16 // state contains two fields, high b bits is the data type, low b bits is operation mark.
 	crc32     uint32 // check sum.
-	TimeStamp uint64 // TimeStamp is the time when entry was written.
+	Timestamp uint64 // Timestamp is the time when entry was written.
 	TxId      uint64 // TxId represents transaction id of the entry.
 }
 
@@ -67,7 +67,7 @@ func newInternal(key, value, extra []byte, state uint16, timestamp uint64) *Entr
 			ExtraSize: uint32(len(extra)),
 		},
 		state:     state,
-		TimeStamp: timestamp,
+		Timestamp: timestamp,
 	}
 }
 
@@ -106,7 +106,7 @@ func NewEntryWithTxn(key, value, extra []byte, t, mark uint16, txId uint64) *Ent
 
 // Size returns the entry's total size.
 func (e *Entry) Size() uint32 {
-	return entryHeaderSize + e.Meta.KeySize + e.Meta.ValueSize + e.Meta.ValueSize
+	return entryHeaderSize + e.Meta.KeySize + e.Meta.ValueSize + e.Meta.ExtraSize
 }
 
 // GetType returns the data type of the entry.
@@ -133,10 +133,10 @@ func Encode(e *Entry) ([]byte, error) {
 	binary.BigEndian.PutUint32(buf[8:12], vs)
 	binary.BigEndian.PutUint32(buf[12:16], es)
 	binary.BigEndian.PutUint16(buf[16:18], e.state)
-	binary.BigEndian.PutUint64(buf[18:26], e.TimeStamp)
+	binary.BigEndian.PutUint64(buf[18:26], e.Timestamp)
 	binary.BigEndian.PutUint64(buf[26:34], e.TxId)
 	copy(buf[entryHeaderSize:entryHeaderSize+ks], e.Meta.Key)
-	copy(buf[entryHeaderSize+ks:entryHeaderSize+ks+vs], e.Meta.Value)
+	copy(buf[entryHeaderSize+ks:(entryHeaderSize+ks+vs)], e.Meta.Value)
 
 	crc := crc32.ChecksumIEEE(e.Meta.Value)
 	binary.BigEndian.PutUint32(buf[0:4], crc)
@@ -162,7 +162,7 @@ func Decode(buf []byte) (*Entry, error) {
 		},
 		state:     state,
 		crc32:     crc,
-		TimeStamp: timestamp,
+		Timestamp: timestamp,
 		TxId:      txId,
 	}, nil
 }
