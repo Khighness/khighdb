@@ -141,7 +141,7 @@ func (h *Hash) HClear(key string) {
 	delete(h.record, key)
 }
 
-// exist checks if a key exists in the hash,
+// exist checks if a key exists in the hash.
 func (h *Hash) exist(key string) bool {
 	_, ok := h.record[key]
 	return ok
