@@ -11,6 +11,7 @@ type Hash struct {
 // Record saves hash records.
 type Record map[string]map[string][]byte
 
+// New creates a new hash data structure.
 func New() *Hash {
 	return &Hash{record: make(Record)}
 }
