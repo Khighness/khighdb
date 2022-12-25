@@ -8,15 +8,15 @@ import (
 // @Author KHighness
 // @Update 2022-12-25
 
-// MaxHeaderSize defines the max size of entry header.
+// MaxMetaSize defines the max size of entry header.
 //	The structure of entry header is as follows:
 //	+-----------+-----------+-----------+-----------+-----------+
 //	|   crc32   |    type   |  KeySize  | ValueSize | expiredAt |
 //	+-----------+-----------+-----------+-----------+-----------+
 //	|   uint32  |    byte   |   uint32  |   uint32  |   int64   |
 //	+-----------+-----------+-----------+-----------+-----------+
-//	So, MaxHeaderSize = 4 + 1 + 5 + 5 + 10 = 25
-const MaxHeaderSize = 25
+//	So, MaxMetaSize = 4 + 1 + 5 + 5 + 10 = 25
+const MaxMetaSize = 25
 
 // EntryType defines the type of log entry.
 type EntryType byte
@@ -57,7 +57,7 @@ func EncodeEntry(e *LogEntry) ([]byte, int) {
 		return nil, 0
 	}
 
-	meta := make([]byte, MaxHeaderSize)
+	meta := make([]byte, MaxMetaSize)
 	meta[4] = byte(e.Type)
 
 	var index = 5
