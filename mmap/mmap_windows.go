@@ -3,15 +3,14 @@
 package mmap
 
 import (
-	"errors"
+	"fmt"
 	"os"
-	"sync"
-
-	"golang.org/x/sys/windows"
+	"syscall"
+	"unsafe"
 )
 
 // @Author KHighness
-// @Update 2022-11-17
+// @Update 2022-12-25
 
 // mmap on Windows system is a two-step process.
 // First, we call windows.CreateFileMapping to get a handle.
@@ -19,134 +18,69 @@ import (
 // Because we want to emulate a POSIX_style mmap, we don't want to expose
 // the handle -- only the pointer. We also want to return only a byte slice.
 
-// We keep this map so that we can get back the original handle from the memory address.
+func mmap(fd *os.File, write bool, size int64) ([]byte, error) {
+	protect := syscall.PAGE_READONLY
+	access := syscall.FILE_MAP_READ
 
-type addrInfo struct {
-	file      windows.Handle
-	mapview   windows.Handle
-	writeable bool
-}
-
-var handleLock sync.Mutex
-var handleMap = map[uintptr]*addrInfo{}
-var ErrUnknownBaseAddress = errors.New("unknown base address")
-
-func mmap(len int, prot, flags, hfile uintptr, off int64) ([]byte, error) {
-	flProtect := uint32(windows.PAGE_READONLY)
-	dwDesireAccess := uint32(windows.FILE_MAP_READ)
-	writeable := false
-	switch {
-	case prot&COPY != 0:
-		flProtect = windows.PAGE_WRITECOPY
-		dwDesireAccess = windows.FILE_MAP_COPY
-		writeable = true
-	case prot&RDWR != 0:
-		flProtect = windows.PAGE_READWRITE
-		dwDesireAccess = windows.FILE_MAP_WRITE
-		writeable = true
+	if write {
+		protect = syscall.PAGE_READWRITE
+		access = syscall.FILE_MAP_WRITE
 	}
-	if prot&EXEC != 0 {
-		flProtect <<= 4
-		dwDesireAccess |= windows.FILE_MAP_EXECUTE
+	fi, err := fd.Stat()
+	if err != nil {
+		return nil, err
 	}
 
-	// The maximum size is the area of the file, starting from 0,
-	// that we wish to allow to be mappable. It is the sum of the
-	// length the user requested, plus the offset where that length
-	// is starting from. This does not map the data into memory.
-	maxSizeHigh := uint32((off + int64(len)) >> 32)
-	maxSizeLow := uint32((off + int64(len)) & 0xFFFFFFFF)
-	h, errno := windows.CreateFileMapping(windows.Handle(hfile), nil, flProtect, maxSizeHigh, maxSizeLow, nil)
-	if h == 0 {
-		return nil, os.NewSyscallError("CreateFileMapping", errno)
-	}
-
-	// Actually map a view of the data into memory. The view's size
-	// is the length the user requested.
-	fileOffsetHigh := uint32(off >> 32)
-	fileOffsetLow := uint32(off & 0xFFFFFFFF)
-	addr, errno := windows.MapViewOfFile(h, dwDesireAccess, fileOffsetHigh, fileOffsetLow, uintptr(len))
-	if addr == 0 {
-		return nil, os.NewSyscallError("MapViewOfFile", errno)
-	}
-	handleLock.Lock()
-	handleMap[addr] = &addrInfo{
-		file:      windows.Handle(hfile),
-		mapview:   h,
-		writeable: writeable,
-	}
-	handleLock.Unlock()
-
-	m := MMap{}
-	dh := m.header()
-	dh.Data = addr
-	dh.Len = len
-	dh.Cap = dh.Len
-
-	return m, nil
-}
-
-func (m MMap) flush() error {
-	addr, l := m.addrLen()
-	errno := windows.FlushViewOfFile(addr, l)
-	if errno != nil {
-		return os.NewSyscallError("FlushViewOfFile", errno)
-	}
-
-	handleLock.Lock()
-	defer handleLock.Unlock()
-	handle, ok := handleMap[addr]
-	if !ok {
-		return ErrUnknownBaseAddress
-	}
-
-	if handle.writeable {
-		if errno := windows.FlushFileBuffers(handle.file); errno != nil {
-			return os.NewSyscallError("FlushFileBuffers", errno)
+	// In windows, we cannot mmap a file more than it's actual size.
+	// So truncate the file to the file of the mmap.
+	if fi.Size() < size {
+		if err := fd.Truncate(size); err != nil {
+			return nil, fmt.Errorf("truncate: %s", err)
 		}
 	}
 
+	// Open a file mapping handle.
+	sizelo := uint32(size >> 32)
+	sizehi := uint32(size) & 0xffffffff
+
+	handler, err := syscall.CreateFileMapping(syscall.Handle(fd.Fd()), nil,
+		uint32(protect), sizelo, sizehi, nil)
+	if err != nil {
+		return nil, os.NewSyscallError("CreateFileMapping", err)
+	}
+
+	// Create the memory mmap.
+	addr, err := syscall.MapViewOfFile(handler, uint32(access), 0, 0, uintptr(size))
+	if addr == 0 {
+		return nil, os.NewSyscallError("MapViewOfFile", err)
+	}
+
+	// Close mapping handle.
+	if err := syscall.CloseHandle(syscall.Handle(handler)); err != nil {
+		return nil, os.NewSyscallError("CLoseHandle", err)
+	}
+
+	// Slice memory layout
+	var sl = struct {
+		addr uintptr
+		len  int
+		cap  int
+	}{addr, int(size), int(size)}
+
+	// Use unsafe to trun sl into a byte slice
+	data := *(*[]byte)(unsafe.Pointer(&sl))
+
+	return data, nil
+}
+
+func munmap(b []byte) error {
+	return syscall.UnmapViewOfFile(uintptr(unsafe.Pointer(&b[0])))
+}
+
+func madvise(b []byte, readahead bool) error {
 	return nil
 }
 
-func (m MMap) lock() error {
-	addr, l := m.addrLen()
-	errno := windows.VirtualLock(addr, l)
-	return os.NewSyscallError("VirtualLock", errno)
-}
-
-func (m MMap) unlock() error {
-	addr, l := m.addrLen()
-	errno := windows.VirtualUnlock(addr, l)
-	return os.NewSyscallError("VirtualUnlock", errno)
-}
-
-func (m MMap) unmap() error {
-	err := m.flush()
-	if err != nil {
-		return err
-	}
-
-	addr := m.header().Data
-	// Lock the UnmapViewOfFile along with the handleMap deletion.
-	// As soon as we unmap the view, the OS is free to give the same
-	// addr to another new map. We don't want another goroutine to
-	// insert and remove the same addr into handleMap while we're
-	// trying to remove our old addr/handle pair.
-	handleLock.Lock()
-	defer handleLock.Unlock()
-	err = windows.UnmapViewOfFile(addr)
-	if err != nil {
-		return err
-	}
-
-	handle, ok := handleMap[addr]
-	if !ok {
-		// should be impossible; we would' ve errored above
-		return ErrUnknownBaseAddress
-	}
-	delete(handleMap, addr)
-
-	e := windows.CloseHandle(windows.Handle(handle.mapview))
-	return os.NewSyscallError("CloseHandle", e)
+func msync(b []byte) error {
+	return syscall.FlushViewOfFile(uintptr(unsafe.Pointer(&b[0])), uintptr(len(b)))
 }

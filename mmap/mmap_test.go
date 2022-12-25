@@ -1,151 +1,124 @@
 package mmap
 
 import (
-	"bytes"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // @Author KHighness
-// @Update 2022-11-22
+// @Update 2022-12-25
 
-var testData = []byte("0123456789ABCDEF")
-var testPath = filepath.Join(os.TempDir(), "testdata")
+func TestMMap(t *testing.T) {
+	dir, err := ioutil.TempDir("", "rosedb-mmap-test")
+	assert.Nil(t, err)
+	path := filepath.Join(dir, "mmap.txt")
 
-func init() {
-	f := openFile(os.O_RDWR | os.O_CREATE | os.O_TRUNC)
-	f.Write(testData)
-	f.Close()
-}
-
-func openFile(flags int) *os.File {
-	f, err := os.OpenFile(testPath, flags, 0644)
-	if err != nil {
-		panic(err)
+	fd, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0644)
+	assert.Nil(t, err)
+	defer func() {
+		if fd != nil {
+			_ = fd.Close()
+			destroyDir(path)
+		}
+	}()
+	type args struct {
+		fd       *os.File
+		writable bool
+		size     int64
 	}
-	return f
-}
-
-func TestMap(t *testing.T) {
-	f := openFile(os.O_RDWR)
-	defer f.Close()
-	mmap, err := Map(f, RDWR, 0)
-	if err != nil {
-		t.Errorf("error mapping: %s", err)
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"normal-size", args{fd: fd, writable: true, size: 100}, false,
+		},
+		{
+			"big-size", args{fd: fd, writable: true, size: 128 << 20}, false,
+		},
 	}
-	defer mmap.Unmap()
-	if !bytes.Equal(testData, mmap) {
-		t.Errorf("mmapBytes(%s) != testData(%s)", mmap, testData)
-	}
-}
-
-func TestReadWrite(t *testing.T) {
-	f := openFile(os.O_RDWR)
-	defer f.Close()
-	mmap, err := Map(f, RDWR, 0)
-	if err != nil {
-		t.Errorf("error mapping: %s", err)
-	}
-	defer mmap.Unmap()
-	if !bytes.Equal(testData, mmap) {
-		t.Errorf("mmapBytes(%s) != testData(%s)", mmap, testData)
-	}
-
-	// Update file 0123456789ABCDEF => 012345678XABCDEF
-	mmap[9] = 'X'
-	mmap.Flush()
-
-	fileData, err := ioutil.ReadAll(f)
-	if err != nil {
-		t.Errorf("error reading file: %s", err)
-	}
-	if !bytes.Equal(fileData, []byte("012345678XABCDEF")) {
-		t.Errorf("error updating file: %s => %s", testData, fileData)
-	}
-
-	// Reset file
-	mmap[9] = '9'
-	mmap.Flush()
-}
-
-func TestProtFlagsANdErr(t *testing.T) {
-	f := openFile(os.O_RDONLY)
-	defer f.Close()
-	if _, err := Map(f, RDWR, 0); err != nil {
-		t.Logf("expected error")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := MMap(tt.args.fd, tt.args.writable, tt.args.size)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Mmap() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if int64(len(got)) != tt.args.size {
+				t.Errorf("Mmap() want buf size = %d, actual = %d", tt.args.size, len(got))
+			}
+		})
 	}
 }
 
-func TestFlags(t *testing.T) {
-	f := openFile(os.O_RDWR)
-	defer f.Close()
-	mmap, err := Map(f, COPY, 0)
-	if err != nil {
-		t.Errorf("error mapping: %s", err)
-	}
-	defer mmap.Unmap()
+func TestMUnmap(t *testing.T) {
+	dir, err := ioutil.TempDir("", "rosedb-mmap-test")
+	assert.Nil(t, err)
+	path := filepath.Join(dir, "mmap.txt")
 
-	mmap[9] = 'X'
-	mmap.Flush()
+	fd, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0644)
+	assert.Nil(t, err)
+	defer func() {
+		if fd != nil {
+			_ = fd.Close()
+			destroyDir(path)
+		}
+	}()
 
-	fileData, err := ioutil.ReadAll(f)
-	if err != nil {
-		t.Errorf("error reading file: %s", err)
-	}
-	if !bytes.Equal(fileData, testData) {
-		t.Errorf("file was modified")
-	}
+	buf, err := MMap(fd, true, 100)
+	assert.Nil(t, err)
+	err = MUnmap(buf)
+	assert.Nil(t, err)
 }
 
-func TestNonZeroOffset(t *testing.T) {
-	const pageSize = 65536
+func TestMSync(t *testing.T) {
+	dir, err := ioutil.TempDir("", "rosedb-mmap-test")
+	assert.Nil(t, err)
+	path := filepath.Join(dir, "mmap.txt")
 
-	// Create a 2-page sized file
-	bigFilePath := filepath.Join(os.TempDir(), "nonzero")
-	fileObj, err := os.OpenFile(bigFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
-	if err != nil {
-		panic(err)
-	}
+	fd, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0644)
+	assert.Nil(t, err)
+	defer func() {
+		if fd != nil {
+			_ = fd.Close()
+			destroyDir(path)
+		}
+	}()
 
-	bigData := make([]byte, 2*pageSize, 2*pageSize)
-	fileObj.Write(bigData)
-	fileObj.Close()
+	buf, err := MMap(fd, true, 128)
+	assert.Nil(t, err)
+	err = MSync(buf)
+	assert.Nil(t, err)
+}
 
-	// Map the first page by itself
-	fileObj, err = os.OpenFile(bigFilePath, os.O_RDONLY, 0)
-	if err != nil {
-		t.Errorf("error mapping file: %s", err)
-	}
-	m, err := MapRegion(fileObj, pageSize, RDONLY, 0, 0)
-	if err != nil {
-		t.Errorf("error mapping file: %s", err)
-	}
-	err = m.Unmap()
-	if err != nil {
-		t.Error(err)
-	}
-	fileObj.Close()
+func TestMAdvise(t *testing.T) {
+	dir, err := ioutil.TempDir("", "rosedb-mmap-test")
+	assert.Nil(t, err)
+	path := filepath.Join(dir, "mmap.txt")
 
-	// Map the second page by itself
-	fileObj, err = os.OpenFile(bigFilePath, os.O_RDONLY, 0)
-	if err != nil {
-		panic(err)
-	}
-	m, err = MapRegion(fileObj, pageSize, RDONLY, 0, pageSize)
-	if err != nil {
-		t.Errorf("error mapping file: %s", err)
-	}
-	err = m.Unmap()
-	if err != nil {
-		t.Error(err)
-	}
+	fd, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0644)
+	assert.Nil(t, err)
+	defer func() {
+		if fd != nil {
+			_ = fd.Close()
+			destroyDir(path)
+		}
+	}()
 
-	m, err = MapRegion(fileObj, pageSize, RDONLY, 0, 1)
-	if err != nil {
-		t.Log("expect error because offset is not a multiple of the page size")
-	}
+	buf, err := MMap(fd, true, 128)
+	assert.Nil(t, err)
+	err = MAdvise(buf, false)
+	assert.Nil(t, err)
+}
 
-	fileObj.Close()
+func destroyDir(dir string) {
+	if err := os.RemoveAll(dir); err != nil {
+		log.Printf("remove dir err: %v", err)
+	}
 }
