@@ -57,7 +57,7 @@ func mmap(fd *os.File, write bool, size int64) ([]byte, error) {
 
 	// Close mapping handle.
 	if err := syscall.CloseHandle(syscall.Handle(handler)); err != nil {
-		return nil, os.NewSyscallError("CLoseHandle", err)
+		return nil, os.NewSyscallError("CloseHandle", err)
 	}
 
 	// Slice memory layout
