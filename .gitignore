@@ -4,3 +4,4 @@
 .log
 .exe
 .DS_Store
+coverage.txt
