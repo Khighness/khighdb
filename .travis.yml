@@ -12,15 +12,7 @@ before_install:
   - go mod tidy
 
 script:
-  - go test ./cache -coverprofile=coverage.txt -covermode=atomic
-  - go test ./mmap -coverprofile=coverage.txt -covermode=atomic
-  - go test ./flock -coverprofile=coverage.txt -covermode=atomic
-  - go test ./ioselector -coverprofile=coverage.txt -covermode=atomic
-  - go test ./storage -coverprofile=coverage.txt -covermode=atomic
-  - go test ./data/art -coverprofile=coverage.txt -covermode=atomic
-  - go test ./data/hash -coverprofile=coverage.txt -covermode=atomic
-  - go test ./data/set -coverprofile=coverage.txt -covermode=atomic
-  - go test ./data/zset -coverprofile=coverage.txt -covermode=atomic
+  -  go test -v ./... -coverprofile=coverage.txt -covermode=atomic
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
