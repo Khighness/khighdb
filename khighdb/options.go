@@ -30,7 +30,7 @@ const (
 	MMap
 )
 
-// Options defines the options for opening a db.
+// Options defines the options for opening a KhighDB.
 type Options struct {
 	// DBPath is the path of db, which will be created automatically if not exist.
 	DBPath string
@@ -78,6 +78,7 @@ type Options struct {
 	DiscardBufferSize int
 }
 
+// DefaultOptions returns the default options for opening a KhighDB.
 func DefaultOptions(path string) Options {
 	return Options{
 		DBPath:               path,
