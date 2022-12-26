@@ -186,6 +186,8 @@ func (skl *SkipList) deleteNode(p *SklNode, front []*SklNode) {
 }
 
 // getRank returns the rank of node according to score and member.
+// // The rank (or index) is 1-based, which means that the member
+// with the lowest score has rank 1.
 // If the node corresponding to the score and member is not found,
 // then 0 will be returned.
 func (skl *SkipList) GetRank(score float64, member string) int64 {
