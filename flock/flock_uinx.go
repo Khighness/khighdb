@@ -13,7 +13,7 @@ import (
 
 // FileLockGuard holds a lock of file on a directory.
 type FileLockGuard struct {
-	fd syscall.Handle
+	fd *os.File
 }
 
 // AcquireFileLock acquire the lock on the directory by syscall.Flock.
