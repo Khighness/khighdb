@@ -1,21 +1,21 @@
-package main
+package assets
 
 import (
 	"io/ioutil"
-	"os"
+	"path/filepath"
 )
 
 // @Author KHighness
 // @Update 2022-12-25
 
-func banner() string {
-	file, err := os.Open("assets/banner.txt")
+func banner() (string, error) {
+	path, err := filepath.Abs("assets/banner.txt")
 	if err != nil {
-		panic(err)
+		return "", nil
 	}
-	buf, err := ioutil.ReadAll(file)
+	buf, err := ioutil.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return "", nil
 	}
-	return string(buf)
+	return string(buf), nil
 }
