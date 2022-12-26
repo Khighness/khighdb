@@ -229,3 +229,64 @@ func (skl *SkipList) GetByRank(rank uint64) *SklNode {
 
 	return nil
 }
+
+// ScoreRange returns all the elements whose score is between min and max.
+// The elements are consideres to be ordered from low to high scores.
+func (skl *SkipList) ScoreRange(min, max float64) (val []interface{}) {
+	minScore, maxScore := skl.head.level[0].backward.score, skl.tail.score
+	if min < minScore {
+		min = minScore
+	}
+	if max > maxScore {
+		max = maxScore
+	}
+
+	p := skl.head
+	for i := skl.level - 1; i >= 0; i-- {
+		for p.level[i].backward != nil && p.level[i].backward.score < min {
+			p = p.level[i].backward
+		}
+	}
+
+	p = p.level[0].backward
+	for p != nil {
+		if p.score > max {
+			break
+		}
+
+		val = append(val, p.member, p.score)
+		p = p.level[0].backward
+	}
+
+	return
+}
+
+// RevScoreRange returns all the elements whose score is between min and max.
+// The elements are consideres to be ordered from high to low scores.
+func (skl *SkipList) RevScoreRange(min, max float64) (val []interface{}) {
+	minScore, maxScore := skl.head.level[0].backward.score, skl.tail.score
+	if min < minScore {
+		min = minScore
+	}
+	if max > maxScore {
+		max = maxScore
+	}
+
+	p := skl.head
+	for i := skl.level - 1; i >= 0; i-- {
+		for p.level[i].backward != nil && p.level[i].backward.score <= max {
+			p = p.level[i].backward
+		}
+	}
+
+	for p != nil {
+		if p.score < min {
+			break
+		}
+
+		val = append(val, p.member, p.score)
+		p = p.forward
+	}
+
+	return
+}

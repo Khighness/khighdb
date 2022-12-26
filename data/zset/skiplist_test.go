@@ -3,6 +3,7 @@ package zset
 import (
 	"testing"
 
+	"github.com/khighness/khighdb/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,13 +21,6 @@ func TestSkipList_Insert(t *testing.T) {
 	skl.Insert(66, "H")
 	skl.Insert(77, "I")
 	assert.Equal(t, int64(3), skl.Size())
-
-	skl = NewSkipList()
-	skl.Insert(1, "1")
-	skl.Insert(2, "2")
-	skl.Insert(3, "3")
-	skl.Insert(4, "4")
-	skl.Insert(3.5, "3.5")
 }
 
 func TestSkipList_Delete(t *testing.T) {
@@ -61,4 +55,24 @@ func TestSkipList_GetByRank(t *testing.T) {
 	assert.Equal(t, "I", node2.member)
 	node4 := skl.GetByRank(4)
 	assert.Nil(t, node4)
+}
+
+func TestSkipList_ScoreRange(t *testing.T) {
+	skl := NewSkipList()
+	for i := 1; i <= 100; i++ {
+		skl.Insert(float64(i), util.Float64ToStr(float64(i)))
+	}
+	res := skl.ScoreRange(3, 33)
+	t.Log(res)
+	assert.Equal(t, 62, len(res))
+}
+
+func TestSkipList_RevScoreRange(t *testing.T) {
+	skl := NewSkipList()
+	for i := 1; i <= 100; i++ {
+		skl.Insert(float64(i), util.Float64ToStr(float64(i)))
+	}
+	res := skl.RevScoreRange(3, 33)
+	t.Log(res)
+	assert.Equal(t, 62, len(res))
 }
