@@ -7,7 +7,7 @@ import "strconv"
 
 // Float64ToStr converts type float64 to string.
 func Float64ToStr(val float64) string {
-	return strconv.FormatFloat(val, "f", -1, 64)
+	return strconv.FormatFloat(val, 'f', -1, 64)
 }
 
 // StrToFloat64 converts type string to float64.
