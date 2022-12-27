@@ -147,7 +147,7 @@ func testIOSelectorWrite(t *testing.T, ioType uint8) {
 			"one-byte", fields{selector: selector}, args{b: []byte("0"), offset: 0}, 1, false,
 		},
 		{
-			"many-bytes", fields{selector: selector}, args{b: []byte("lotusdb"), offset: 0}, 7, false,
+			"many-bytes", fields{selector: selector}, args{b: []byte("khighdb"), offset: 0}, 7, false,
 		},
 		{
 			"bigvalue-byte", fields{selector: selector}, args{b: []byte(fmt.Sprintf("%01048576d", 123)), offset: 0}, 1048576, false,
@@ -156,7 +156,7 @@ func testIOSelectorWrite(t *testing.T, ioType uint8) {
 			"exceed-size", fields{selector: selector}, args{b: []byte(fmt.Sprintf("%01048577d", 123)), offset: 0}, 1048577, false,
 		},
 		{
-			"EOF-error", fields{selector: selector}, args{b: []byte("lotusdb"), offset: -1}, 0, true,
+			"EOF-error", fields{selector: selector}, args{b: []byte("khighdb"), offset: -1}, 0, true,
 		},
 	}
 
@@ -198,7 +198,7 @@ func testIOSelectorRead(t *testing.T, ioType uint8) {
 	results := [][]byte{
 		[]byte(""),
 		[]byte("1"),
-		[]byte("lotusdb"),
+		[]byte("khighdb"),
 	}
 
 	type fields struct {
@@ -252,7 +252,7 @@ func writeSomeData(selector IOSelector, t *testing.T) []int64 {
 	tests := [][]byte{
 		[]byte(""),
 		[]byte("1"),
-		[]byte("lotusdb"),
+		[]byte("khighdb"),
 	}
 
 	var offsets []int64
