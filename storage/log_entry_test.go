@@ -101,7 +101,7 @@ func Test_getEntryCrc(t *testing.T) {
 			"no-fields", args{e: &LogEntry{}, h: []byte{0, 0, 0, 0}}, 558161692,
 		},
 		{
-			"normal", args{e: &LogEntry{Key: []byte("kv"), Value: []byte("lotusdb")}, h: []byte{0, 4, 14, 198, 147, 242, 166, 3}}, 2631913573,
+			"normal", args{e: &LogEntry{Key: []byte("kv"), Value: []byte("khighdb")}, h: []byte{0, 4, 14, 198, 147, 242, 166, 3}}, 913202917,
 		},
 	}
 	for _, tt := range tests {
