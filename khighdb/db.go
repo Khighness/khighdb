@@ -1,7 +1,9 @@
 package khighdb
 
 import (
+	"encoding/binary"
 	"errors"
+	"github.com/khighness/khighdb/flock"
 	"math"
 	"sync"
 
@@ -44,6 +46,17 @@ type KhighDB struct {
 	activeLogFiles   map[DataType]*storage.LogFile
 	archivedLogFiles map[DataType]archivedFiles
 	fidMap           map[DataType][]uint32
+	discards         map[DataType]*discard
+	options          Options
+	strIndex         *strIndex
+	listIndex        *listIndex
+	hashIndex        *hashIndex
+	setIndex         *setIndex
+	zsetIndex        *zsetIndex
+	mu               sync.RWMutex
+	fileLock         *flock.FileLockGuard
+	closed           uint32
+	gcState          int32
 }
 
 type (
@@ -91,3 +104,29 @@ type (
 		trees   map[string]*art.AdaptiveRadixTree
 	}
 )
+
+func (db *KhighDB) encodeKey(key, subKey []byte) []byte {
+	header := make([]byte, encodeHeaderSize)
+	var headerSize int
+	headerSize += binary.PutVarint(header[headerSize:], int64(len(key)))
+	headerSize += binary.PutVarint(header[headerSize:], int64(len(subKey)))
+	keyLength := len(key) + len(subKey)
+	if keyLength > 0 {
+		buf := make([]byte, headerSize+keyLength)
+		copy(buf[:headerSize], header[:headerSize])
+		copy(buf[headerSize:headerSize+len(key)], key)
+		copy(buf[headerSize+len(key):], subKey)
+		return buf
+	}
+	return header[:headerSize]
+}
+
+func (db *KhighDB) decodeKey(key []byte) ([]byte, []byte) {
+	var headerSize int
+	keySize, i := binary.Varint(key[headerSize:])
+	headerSize += i
+	_, i = binary.Varint(key[headerSize:])
+	headerSize += i
+	subKeyIndex := headerSize + int(keySize)
+	return key[headerSize:subKeyIndex], key[subKeyIndex:]
+}
