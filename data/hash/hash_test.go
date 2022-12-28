@@ -1,7 +1,7 @@
 package hash
 
 import (
-	"strconv"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,10 +106,12 @@ func TestHash_HKeys(t *testing.T) {
 func TestHash_HValues(t *testing.T) {
 	hash := InitHash()
 	values := hash.HValues(key)
-	for i, v := range values {
-		assert.Equal(t, []byte("hash_data_00"+strconv.Itoa(i+1)), v)
-		t.Log(string(v))
+	strs := make([]string, 0)
+	for _, v := range values {
+		strs = append(strs, string(v))
 	}
+	res := reflect.DeepEqual(strs, []string{"hash_data_001", "hash_data_002", "hash_data_003"})
+	assert.Equal(t, true, res)
 }
 
 func TestHash_HLen(t *testing.T) {
