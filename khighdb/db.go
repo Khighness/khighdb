@@ -3,12 +3,12 @@ package khighdb
 import (
 	"encoding/binary"
 	"errors"
-	"github.com/khighness/khighdb/flock"
 	"math"
 	"sync"
 
 	"github.com/khighness/khighdb/data/art"
 	"github.com/khighness/khighdb/data/zset"
+	"github.com/khighness/khighdb/flock"
 	"github.com/khighness/khighdb/storage"
 	"github.com/khighness/khighdb/util"
 )
