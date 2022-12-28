@@ -15,7 +15,7 @@ import (
 // @Update 2022-12-28
 
 func init() {
-	logger.InitLogger(zapcore.InfoLevel)
+	logger.InitLogger(zapcore.DebugLevel)
 }
 
 func TestDiscard_newDiscard(t *testing.T) {
