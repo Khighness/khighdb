@@ -70,7 +70,7 @@ type Options struct {
 	// Default value is 512MB.
 	LogFileSizeThreshold int64
 
-	// DiscardBufferSize is the max size for the discard log entries.
+	// DiscardBufferSize is the max size for the channel to send discard log entries.
 	// A channel will be created to send the older entry size when a key is updated or deleted.
 	// Entry size will be saved in the discard file, recoding the invalid size in a log file,
 	// and be used for log file gc.
