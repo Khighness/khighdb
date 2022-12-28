@@ -180,6 +180,16 @@ func (d *discard) setTotal(fid uint32, totalSize uint32) {
 		zap.Uint32("fid", fid), zap.Uint32("totalSize", totalSize))
 }
 
+func (d *discard) clear(fid uint32) {
+	d.incr(fid, -1)
+	d.Lock()
+	defer d.Unlock()
+	if offset, ok := d.location[fid]; ok {
+		d.freeList = append(d.freeList, offset)
+		delete(d.location, fid)
+	}
+}
+
 func (d *discard) incrDiscard(fid uint32, entrySize int) {
 	if entrySize > 0 {
 		d.incr(fid, entrySize)
