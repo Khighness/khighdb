@@ -121,9 +121,10 @@ func (d *discard) getCCL(activeFid uint32, ratio float64) ([]uint32, error) {
 		var curRatio float64
 		if totalSize != 0 && discardSize != 0 {
 			curRatio = float64(discardSize) / float64(totalSize)
-			zap.L().Info("add ccl", zap.Uint32("fid", fid), zap.Uint32("total", totalSize), zap.Uint32("discard", discardSize), zap.Float64("ratio", curRatio))
 		}
 		if curRatio >= ratio && fid != activeFid {
+			zap.L().Debug("add fid to ccl", zap.Uint32("fid", fid),
+				zap.Uint32("total", totalSize), zap.Uint32("discard", discardSize), zap.Float64("ratio", curRatio))
 			ccl = append(ccl, fid)
 		}
 	}
