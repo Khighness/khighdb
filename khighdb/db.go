@@ -2,12 +2,13 @@ package khighdb
 
 import (
 	"errors"
+	"math"
+	"sync"
+
 	"github.com/khighness/khighdb/data/art"
 	"github.com/khighness/khighdb/data/zset"
 	"github.com/khighness/khighdb/storage"
 	"github.com/khighness/khighdb/util"
-	"math"
-	"sync"
 )
 
 // @Author KHighness
@@ -83,7 +84,7 @@ type (
 		trees   map[string]*art.AdaptiveRadixTree
 	}
 
-	zsetInex struct {
+	zsetIndex struct {
 		mu      *sync.RWMutex
 		indexes *zset.SortedSet
 		murhash *util.Murmur128
