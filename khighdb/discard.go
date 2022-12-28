@@ -121,6 +121,7 @@ func (d *discard) getCCL(activeFid uint32, ratio float64) ([]uint32, error) {
 		var curRatio float64
 		if totalSize != 0 && discardSize != 0 {
 			curRatio = float64(discardSize) / float64(totalSize)
+			zap.L().Info("add ccl", zap.Uint32("fid", fid), zap.Uint32("total", totalSize), zap.Uint32("discard", discardSize), zap.Float64("ratio", curRatio))
 		}
 		if curRatio >= ratio && fid != activeFid {
 			ccl = append(ccl, fid)
@@ -196,7 +197,7 @@ func (d *discard) incrDiscard(fid uint32, entrySize int) {
 	}
 }
 
-func (d *discard) incr(fid uint32, delta int) {
+func (d *discard) incr(fid uint32, delta int) (newDiscardSize int) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -216,7 +217,8 @@ func (d *discard) incr(fid uint32, delta int) {
 		}
 
 		discardSize := binary.LittleEndian.Uint32(buf)
-		binary.LittleEndian.PutUint32(buf, discardSize+uint32(delta))
+		newDiscardSize = int(discardSize + uint32(delta))
+		binary.LittleEndian.PutUint32(buf, uint32(newDiscardSize))
 		zap.L().Info("incr discard size", zap.Uint32("fid", fid),
 			zap.Uint32("discardSize", discardSize), zap.Int("delta", delta))
 	} else {
@@ -225,8 +227,8 @@ func (d *discard) incr(fid uint32, delta int) {
 
 	if _, err = d.file.Write(buf, offset); err != nil {
 		zap.L().Error("incr discard size in discard file err", zap.Uint32("fid", fid), zap.Error(err))
-		return
 	}
+	return
 }
 
 func (d *discard) alloc(fid uint32) (int64, error) {
