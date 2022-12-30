@@ -105,17 +105,17 @@ type (
 	}
 )
 
-func (db *KhighDB) encodeKey(key, subKey []byte) []byte {
+func (db *KhighDB) encodeKey(key, field []byte) []byte {
 	header := make([]byte, encodeHeaderSize)
 	var headerSize int
 	headerSize += binary.PutVarint(header[headerSize:], int64(len(key)))
-	headerSize += binary.PutVarint(header[headerSize:], int64(len(subKey)))
-	keyLength := len(key) + len(subKey)
+	headerSize += binary.PutVarint(header[headerSize:], int64(len(field)))
+	keyLength := len(key) + len(field)
 	if keyLength > 0 {
 		buf := make([]byte, headerSize+keyLength)
 		copy(buf[:headerSize], header[:headerSize])
 		copy(buf[headerSize:headerSize+len(key)], key)
-		copy(buf[headerSize+len(key):], subKey)
+		copy(buf[headerSize+len(key):], field)
 		return buf
 	}
 	return header[:headerSize]
@@ -123,10 +123,10 @@ func (db *KhighDB) encodeKey(key, subKey []byte) []byte {
 
 func (db *KhighDB) decodeKey(key []byte) ([]byte, []byte) {
 	var headerSize int
-	keySize, i := binary.Varint(key[headerSize:])
-	headerSize += i
-	_, i = binary.Varint(key[headerSize:])
-	headerSize += i
-	subKeyIndex := headerSize + int(keySize)
-	return key[headerSize:subKeyIndex], key[subKeyIndex:]
+	keyLength, keySize := binary.Varint(key[headerSize:])
+	headerSize += keySize
+	_, fieldSize := binary.Varint(key[headerSize:])
+	headerSize += fieldSize
+	fieldIndex := headerSize + int(keyLength)
+	return key[headerSize:fieldIndex], key[fieldIndex:]
 }
