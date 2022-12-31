@@ -106,6 +106,7 @@ func OpenLogFile(path string, fid uint32, fsize int64, ftype FileType, ioType IO
 	return
 }
 
+// ReadLogEntry reads a LogEntry from log file at offset.
 func (lf *LogFile) ReadLogEntry(offset int64) (*LogEntry, int64, error) {
 	// Read entry meta.
 	metaBuf, err := lf.readBytes(offset, MaxMetaSize)
