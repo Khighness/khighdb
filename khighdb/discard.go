@@ -96,8 +96,9 @@ func (d *discard) close() error {
 	return d.file.Close()
 }
 
-// getCCL returns the compaction candidate list.
-// Iterate and find the file with most discarded data.
+// getCCL returns the compaction candidate fid list that does not
+// contain the fix of active log file.
+// Iterate and find the archived log file with most discarded data.
 // There are 682 records at most, regardless of performance.
 func (d *discard) getCCL(activeFid uint32, ratio float64) ([]uint32, error) {
 	var offset int64
