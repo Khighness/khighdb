@@ -197,6 +197,7 @@ func Open(options Options) (*KhighDB, error) {
 	return db, nil
 }
 
+// Close closes the KhighDB instance and saves relative configs.
 func (db *KhighDB) Close() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
