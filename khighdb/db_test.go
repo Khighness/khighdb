@@ -20,6 +20,7 @@ func TestOpen(t *testing.T) {
 		assert.NotNil(t, db)
 	})
 
+	// TODO: fixed.
 	t.Run("mmap", func(t *testing.T) {
 		options := DefaultOptions(path)
 		options.IoType = MMap
