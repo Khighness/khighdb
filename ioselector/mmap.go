@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/khighness/khighdb/mmap"
+	"github.com/Khighness/khighdb/mmap"
 )
 
 // @Author KHighness

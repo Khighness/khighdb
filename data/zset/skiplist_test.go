@@ -3,7 +3,7 @@ package zset
 import (
 	"testing"
 
-	"github.com/khighness/khighdb/util"
+	"github.com/Khighness/khighdb/util"
 	"github.com/stretchr/testify/assert"
 )
 

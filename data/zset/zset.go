@@ -3,8 +3,8 @@ package zset
 import (
 	"math"
 
-	"github.com/khighness/khighdb/storage"
-	"github.com/khighness/khighdb/util"
+	"github.com/Khighness/khighdb/storage"
+	"github.com/Khighness/khighdb/util"
 )
 
 // @Author KHighness

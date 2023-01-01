@@ -10,7 +10,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/khighness/khighdb/storage"
+	"github.com/Khighness/khighdb/storage"
 )
 
 // @Author KHighness

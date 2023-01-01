@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/khighness/khighdb/logger"
+	"github.com/Khighness/khighdb/logger"
 )
 
 // @Author KHighness

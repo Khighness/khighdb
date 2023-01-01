@@ -14,11 +14,11 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/khighness/khighdb/data/art"
-	"github.com/khighness/khighdb/data/zset"
-	"github.com/khighness/khighdb/flock"
-	"github.com/khighness/khighdb/storage"
-	"github.com/khighness/khighdb/util"
+	"github.com/Khighness/khighdb/data/art"
+	"github.com/Khighness/khighdb/data/zset"
+	"github.com/Khighness/khighdb/flock"
+	"github.com/Khighness/khighdb/storage"
+	"github.com/Khighness/khighdb/util"
 )
 
 // @Author KHighness

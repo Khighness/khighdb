@@ -8,7 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/khighness/khighdb/ioselector"
+	"github.com/Khighness/khighdb/ioselector"
 )
 
 // @Author KHighness
