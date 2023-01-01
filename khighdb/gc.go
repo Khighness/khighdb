@@ -16,6 +16,7 @@ import (
 // @Author KHighness
 // @Update 2022-12-31
 
+// handleLogFileGC starts a ticker to execute gc periodically.
 func (db *KhighDB) handleLogFileGC() {
 	gcInternal := db.options.LogFileGCInternal
 	if gcInternal <= 0 {
