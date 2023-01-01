@@ -4,13 +4,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"go.uber.org/zap"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
-	"sort"
-	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -239,6 +235,53 @@ func (db *KhighDB) Close() error {
 
 	zap.L().Info("KhighDB is closed successfully")
 	return nil
+}
+
+// Sync synchronizes the db files to disk.
+func (db *KhighDB) Sync() error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	for _, activeLogFile := range db.activeLogFiles {
+		if err := activeLogFile.Sync(); err != nil {
+			return err
+		}
+	}
+	for _, discard := range db.discards {
+		if err := discard.sync(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Backup copies the db directory to the given path for backup.
+func (db *KhighDB) BackUp(path string) error {
+	// Don't backup while log file gc is running.
+	if atomic.LoadInt32(&db.gcState) > 0 {
+		return ErrLogFileGCRunning
+	}
+
+	// Sync log files before backup.
+	if err := db.Sync(); err != nil {
+		return err
+	}
+	if !util.PathExist(path) {
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
+			return err
+		}
+	}
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	return util.CopyDir(db.options.DBPath, path)
+}
+
+// RunLogFileGC executes log file garbage collection manually.
+func (db *KhighDB) RunLogFileGC(dataType DataType, fid int, gcRatio float64) error {
+	if atomic.LoadInt32(&db.gcState) > 0 {
+		return ErrLogFileGCRunning
+	}
+	return db.doRunGC(dataType, fid, gcRatio)
 }
 
 // openKeyValueMemMode judges if db's index mode is equal to KeyValueMemMode.
