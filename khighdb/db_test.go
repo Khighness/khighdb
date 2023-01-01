@@ -1,8 +1,11 @@
 package khighdb
 
 import (
+	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -18,15 +21,16 @@ func TestOpen(t *testing.T) {
 		db, err := Open(options)
 		assert.Nil(t, err)
 		assert.NotNil(t, db)
+		defer destroyDB(db)
 	})
 
-	// TODO: fixed.
 	t.Run("mmap", func(t *testing.T) {
 		options := DefaultOptions(path)
 		options.IoType = MMap
 		db, err := Open(options)
 		assert.Nil(t, err)
 		assert.NotNil(t, db)
+		defer destroyDB(db)
 	})
 }
 
@@ -37,4 +41,18 @@ func TestKhighDB_encodeKey_decodeKey(t *testing.T) {
 	keyBuf, fieldBuf := db.decodeKey(buf)
 	assert.Equal(t, key, string(keyBuf))
 	assert.Equal(t, field, string(fieldBuf))
+}
+
+func destroyDB(db *KhighDB)  {
+	if db != nil {
+		if err := db.Close(); err != nil {
+			panic(err)
+		}
+		if runtime.GOOS == "windows" {
+			time.Sleep(100 *time.Millisecond)
+		}
+		if err := os.RemoveAll(db.options.DBPath); err != nil {
+			panic(err)
+		}
+	}
 }
