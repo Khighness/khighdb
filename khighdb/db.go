@@ -241,6 +241,122 @@ func (db *KhighDB) Close() error {
 	return nil
 }
 
+// openKeyValueMemMode judges if db's index mode is equal to KeyValueMemMode.
+// Returning true represents both read and write operations of value are performed
+// in memory without disk intervention.
+func (db *KhighDB) openKeyValueMemMode() bool {
+	return db.options.IndexMode == KeyValueMemMode
+}
+
+// isClosed checks if the db has been closed.
+func (db *KhighDB) isClosed() bool {
+	return atomic.LoadUint32(&db.closed) == 1
+}
+
+// getActiveLogFile returns the active log file corresponding to the specified data type.
+func (db *KhighDB) getActiveLogFile(dataType DataType) *storage.LogFile {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+	return db.activeLogFiles[dataType]
+}
+
+// getActiveLogFile returns the archived log file corresponding to the specified data type
+// and fid.
+func (db *KhighDB) getArchivedLogFile(dataType DataType, fid uint32) *storage.LogFile {
+	var logFile *storage.LogFile
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+	if db.activeLogFiles[dataType] != nil {
+		logFile = db.archivedLogFiles[dataType][fid]
+	}
+	return logFile
+}
+
+// encodeKey encodes the key and sub key into a byte slice.
+func (db *KhighDB) encodeKey(key, subkey []byte) []byte {
+	header := make([]byte, encodeHeaderSize)
+	var headerSize int
+	headerSize += binary.PutVarint(header[headerSize:], int64(len(key)))
+	headerSize += binary.PutVarint(header[headerSize:], int64(len(subkey)))
+	keyLength := len(key) + len(subkey)
+	if keyLength > 0 {
+		buf := make([]byte, headerSize+keyLength)
+		copy(buf[:headerSize], header[:headerSize])
+		copy(buf[headerSize:headerSize+len(key)], key)
+		copy(buf[headerSize+len(key):], subkey)
+		return buf
+	}
+	return header[:headerSize]
+}
+
+// decodeKey decodes the byte slice into a key and sub key.
+func (db *KhighDB) decodeKey(key []byte) ([]byte, []byte) {
+	var headerSize int
+	keyLength, keySize := binary.Varint(key[headerSize:])
+	headerSize += keySize
+	_, subkeySize := binary.Varint(key[headerSize:])
+	headerSize += subkeySize
+	subkeyIndex := headerSize + int(keyLength)
+	return key[headerSize:subkeyIndex], key[subkeyIndex:]
+}
+
+// writeLogEntry writes a logEntry to the active logFile corresponding to data type.
+func (db *KhighDB) writeLogEntry(ent *storage.LogEntry, dataType DataType) (*valuePos, error) {
+	if err := db.initLogFile(dataType); err != nil {
+		return nil, err
+	}
+	activeLogFile := db.getActiveLogFile(dataType)
+	if activeLogFile == nil {
+		return nil, ErrLogFileNotFound
+	}
+
+	options := db.options
+	entBuf, entSize := storage.EncodeEntry(ent)
+
+	// Checks if the log file exceeds threshold.
+	if activeLogFile.WriteAt+int64(entSize) > options.LogFileSizeThreshold {
+		if err := activeLogFile.Sync(); err != nil {
+			return nil, err
+		}
+
+		db.mu.Lock()
+
+		// Save the old log file in archived files.
+		activeFileId := activeLogFile.Fid
+		if db.archivedLogFiles[dataType] == nil {
+			db.archivedLogFiles[dataType] = make(archivedFiles)
+		}
+		db.archivedLogFiles[dataType][activeFileId] = activeLogFile
+
+		// Open a new log file.
+		fileType, ioType := storage.FileType(dataType), storage.IOType(options.IoType)
+		logFile, err := storage.OpenLogFile(options.DBPath, activeFileId+1, options.LogFileSizeThreshold, fileType, ioType)
+		if err != nil {
+			db.mu.Unlock()
+			return nil, err
+		}
+		db.discards[dataType].setTotal(logFile.Fid, uint32(options.LogFileSizeThreshold))
+		db.activeLogFiles[dataType] = logFile
+		activeLogFile = logFile
+		db.mu.Unlock()
+	}
+
+	// Write entry and sync if necessary.
+	writeAt := atomic.LoadInt64(&activeLogFile.WriteAt)
+	if err := activeLogFile.Write(entBuf); err != nil {
+		return nil, err
+	}
+	if options.Sync {
+		if err := activeLogFile.Sync(); err != nil {
+			return nil, err
+		}
+	}
+	return &valuePos{
+		fid:    activeLogFile.Fid,
+		offset: writeAt,
+	}, nil
+}
+
 func (db *KhighDB) initDiscard() error {
 	discardPath := filepath.Join(db.options.DBPath, discardFilePath)
 	if !util.PathExist(discardPath) {
@@ -332,114 +448,4 @@ func (db *KhighDB) initLogFile(dataType DataType) error {
 	db.discards[dataType].setTotal(logFile.Fid, uint32(options.LogFileSizeThreshold))
 	db.activeLogFiles[dataType] = logFile
 	return nil
-}
-
-// openKeyValueMemMode judges if db's index mode is equal to KeyValueMemMode.
-// Returning true represents both read and write operations of value are performed
-// in memory without disk intervention.
-func (db *KhighDB) openKeyValueMemMode() bool {
-	return db.options.IndexMode == KeyValueMemMode
-}
-
-func (db *KhighDB) isClosed() bool {
-	return atomic.LoadUint32(&db.closed) == 1
-}
-
-func (db *KhighDB) getActiveLogFile(dataType DataType) *storage.LogFile {
-	db.mu.RLock()
-	defer db.mu.RUnlock()
-	return db.activeLogFiles[dataType]
-}
-
-func (db *KhighDB) getArchivedLogFile(dataType DataType, fid uint32) *storage.LogFile {
-	var logFile *storage.LogFile
-	db.mu.RLock()
-	defer db.mu.RUnlock()
-	if db.activeLogFiles[dataType] != nil {
-		logFile = db.archivedLogFiles[dataType][fid]
-	}
-	return logFile
-}
-
-func (db *KhighDB) encodeKey(key, subkey []byte) []byte {
-	header := make([]byte, encodeHeaderSize)
-	var headerSize int
-	headerSize += binary.PutVarint(header[headerSize:], int64(len(key)))
-	headerSize += binary.PutVarint(header[headerSize:], int64(len(subkey)))
-	keyLength := len(key) + len(subkey)
-	if keyLength > 0 {
-		buf := make([]byte, headerSize+keyLength)
-		copy(buf[:headerSize], header[:headerSize])
-		copy(buf[headerSize:headerSize+len(key)], key)
-		copy(buf[headerSize+len(key):], subkey)
-		return buf
-	}
-	return header[:headerSize]
-}
-
-func (db *KhighDB) decodeKey(key []byte) ([]byte, []byte) {
-	var headerSize int
-	keyLength, keySize := binary.Varint(key[headerSize:])
-	headerSize += keySize
-	_, subkeySize := binary.Varint(key[headerSize:])
-	headerSize += subkeySize
-	subkeyIndex := headerSize + int(keyLength)
-	return key[headerSize:subkeyIndex], key[subkeyIndex:]
-}
-
-// writeLogEntry writes a logEntry to the active logFile corresponding to data type.
-func (db *KhighDB) writeLogEntry(ent *storage.LogEntry, dataType DataType) (*valuePos, error) {
-	if err := db.initLogFile(dataType); err != nil {
-		return nil, err
-	}
-	activeLogFile := db.getActiveLogFile(dataType)
-	if activeLogFile == nil {
-		return nil, ErrLogFileNotFound
-	}
-
-	options := db.options
-	entBuf, entSize := storage.EncodeEntry(ent)
-
-	// Checks if the log file exceeds threshold.
-	if activeLogFile.WriteAt+int64(entSize) > options.LogFileSizeThreshold {
-		if err := activeLogFile.Sync(); err != nil {
-			return nil, err
-		}
-
-		db.mu.Lock()
-
-		// Save the old log file in archived files.
-		activeFileId := activeLogFile.Fid
-		if db.archivedLogFiles[dataType] == nil {
-			db.archivedLogFiles[dataType] = make(archivedFiles)
-		}
-		db.archivedLogFiles[dataType][activeFileId] = activeLogFile
-
-		// Open a new log file.
-		fileType, ioType := storage.FileType(dataType), storage.IOType(options.IoType)
-		logFile, err := storage.OpenLogFile(options.DBPath, activeFileId+1, options.LogFileSizeThreshold, fileType, ioType)
-		if err != nil {
-			db.mu.Unlock()
-			return nil, err
-		}
-		db.discards[dataType].setTotal(logFile.Fid, uint32(options.LogFileSizeThreshold))
-		db.activeLogFiles[dataType] = logFile
-		activeLogFile = logFile
-		db.mu.Unlock()
-	}
-
-	// Write entry and sync if necessary.
-	writeAt := atomic.LoadInt64(&activeLogFile.WriteAt)
-	if err := activeLogFile.Write(entBuf); err != nil {
-		return nil, err
-	}
-	if options.Sync {
-		if err := activeLogFile.Sync(); err != nil {
-			return nil, err
-		}
-	}
-	return &valuePos{
-		fid:    activeLogFile.Fid,
-		offset: writeAt,
-	}, nil
 }
