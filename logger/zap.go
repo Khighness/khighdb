@@ -11,7 +11,8 @@ import (
 // @Author KHighness
 // @Update 2022-12-28
 
-// InitLogger initializes zap.Logger then we can use  zap.L() to get this logger.
+// InitLogger initializes `zap.Logger` then we can use
+// `zap.L()` or `zao.S()` to get global logger.
 func InitLogger(level zapcore.Level) {
 	var core zapcore.Core
 	fileCore := zapcore.NewCore(zapFileEncoder(), zapWriteSyncer(), zapLevelEnabler())
