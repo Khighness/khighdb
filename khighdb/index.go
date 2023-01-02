@@ -263,9 +263,9 @@ func (db *KhighDB) updateIndexTree(idxTree *art.AdaptiveRadixTree, ent *storage.
 		idxNode.expiredAt = ent.ExpiredAt
 	}
 
-	idxTree.Put(ent.Key, idxNode)
+	oldVal, updated := idxTree.Put(ent.Key, idxNode)
 	if sendDiscard {
-		// TODO: add KhighDB.sendDiscard()
+		db.sendDiscard(oldVal, updated, dataType)
 	}
 	return nil
 }

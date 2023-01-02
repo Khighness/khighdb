@@ -16,6 +16,23 @@ import (
 // @Author KHighness
 // @Update 2022-12-31
 
+// sendDiscard sends a node to the discard node channel when the key-value pair
+// is updated deleted. If updated is false, nothing will be done.
+func (db *KhighDB) sendDiscard(oldNode interface{}, updated bool, dataType DataType) {
+	if !updated || oldNode == nil {
+		return
+	}
+	node, _ := oldNode.(*indexNode)
+	if node == nil || node.entrySize <= 0 {
+		return
+	}
+	select {
+	case db.discards[dataType].nodeChan <- node:
+	default:
+		zap.L().Warn("failed to send node to discard channel")
+	}
+}
+
 // handleLogFileGC starts a ticker to execute gc periodically.
 func (db *KhighDB) handleLogFileGC() {
 	gcInternal := db.options.LogFileGCInternal

@@ -41,7 +41,7 @@ var ErrDiscardNoSpace = errors.New("not enough space can be allocated for the di
 type discard struct {
 	sync.Mutex
 	once     *sync.Once
-	valChan  chan *indexNode
+	nodeChan chan *indexNode
 	file     ioselector.IOSelector
 	freeList []int64          // contains file offset that can be allocated
 	location map[uint32]int64 // offset of each fid
@@ -79,7 +79,7 @@ func newDiscard(path, name string, bufferSize int) (*discard, error) {
 
 	d := &discard{
 		once:     new(sync.Once),
-		valChan:  make(chan *indexNode, bufferSize),
+		nodeChan: make(chan *indexNode, bufferSize),
 		file:     file,
 		freeList: freeList,
 		location: location,
@@ -140,7 +140,7 @@ func (d *discard) getCCL(activeFid uint32, ratio float64) ([]uint32, error) {
 func (d *discard) listenUpdates() {
 	for {
 		select {
-		case idxNode, ok := <-d.valChan:
+		case idxNode, ok := <-d.nodeChan:
 			if !ok {
 				if err := d.file.Close(); err != nil {
 					zap.L().Error("failed to close discard file", zap.Error(err))
@@ -154,7 +154,7 @@ func (d *discard) listenUpdates() {
 
 func (d *discard) closeChan() {
 	d.once.Do(func() {
-		close(d.valChan)
+		close(d.nodeChan)
 	})
 }
 
