@@ -317,7 +317,7 @@ func (db *KhighDB) DecrBy(key []byte, delta int64) (int64, error) {
 }
 
 // deltaBy updates the integer value corresponding to key.
-// This function shuold be invoked with write lock.
+// This function should be invoked with write lock.
 // It returns the updated value. It returns 0 if any error occurs.
 func (db *KhighDB) deltaBy(key []byte, delta int64) (int64, error) {
 	val, err := db.getVal(db.strIndex.idxTree, key, String)
@@ -379,7 +379,7 @@ func (db *KhighDB) Count() int {
 // Parameter prefix will matches key's prefix, and pattern is a regular expression that
 // also matches the key. Parameter count limits the number of keys, a empty slice will
 // will be returned is count is not a positive number.
-// The returnes values will be a mixed data of keys and values, like [key, value, key, value ...].
+// The returned values will be a mixed data of keys and values, like [key, value, key, value ...].
 func (db *KhighDB) Scan(prefix []byte, pattern string, count int) ([][]byte, error) {
 	if count <= 0 {
 		return nil, nil
@@ -434,6 +434,7 @@ func (db *KhighDB) Expire(key []byte, duration time.Duration) error {
 	return db.SetEX(key, val, duration)
 }
 
+// TTL gets time to live for the given key.
 func (db *KhighDB) TTL(key []byte) (int64, error) {
 	db.strIndex.mu.Lock()
 	defer db.strIndex.mu.Unlock()
@@ -449,7 +450,7 @@ func (db *KhighDB) TTL(key []byte) (int64, error) {
 	return ttl, nil
 }
 
-// Persist remove the expiration time for the given key.
+// Persist removes the expiration time for the given key.
 func (db *KhighDB) Persist(key []byte) error {
 	db.strIndex.mu.Lock()
 	val, err := db.getVal(db.strIndex.idxTree, key, String)
