@@ -27,10 +27,10 @@ var (
 	ErrLogFileNotFound = errors.New("log file not found")
 	// ErrWrongNumberOfArgs represents the number of arguments is invalid.
 	ErrInvalidNumberOfArgs = errors.New("invalid number of arguments")
-	// ErrIntegerOverflow represents the result after increment or decrement overflows int64 limitations.
-	ErrIntegerOverflow = errors.New("increment or decrement overflow")
 	// ErrInvalidValueType represents the type of value is invalid.
 	ErrInvalidValueType = errors.New("value is not an integer")
+	// ErrIntegerOverflow represents the result after increment or decrement overflows int64 limitations.
+	ErrIntegerOverflow = errors.New("increment or decrement overflow")
 	// ErrIndexOutOfRange represents the index is out of range,
 	ErrIndexOutOfRange = errors.New("index is out of range")
 	// ErrLogFileGCRunning represents log file gc is running.
