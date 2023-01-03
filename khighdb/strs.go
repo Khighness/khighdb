@@ -142,6 +142,9 @@ func (db *KhighDB) GetDel(key []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	oldVal, updated := db.strIndex.idxTree.Delete(key)
+	db.sendDiscard(oldVal, updated, String)
 	_, size := storage.EncodeEntry(entry)
 	node := &indexNode{fid: pos.fid, entrySize: size}
 	select {
