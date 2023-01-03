@@ -51,7 +51,8 @@ func TestAdaptiveRadixTree_Put(t *testing.T) {
 
 func TestAdaptiveRadixTree_Get(t *testing.T) {
 	tree := NewART()
-	tree.Put(nil, nil)
+	tree.Put(nil, "zero")
+	tree.Put([]byte("zero"), nil)
 	tree.Put([]byte("0"), 0)
 	tree.Put([]byte("11"), 11)
 	tree.Put([]byte("11"), "rewrite-data")
@@ -66,11 +67,13 @@ func TestAdaptiveRadixTree_Get(t *testing.T) {
 		want interface{}
 	}{
 		{
-
-			"nil", tree, args{key: nil}, nil,
+			"key-nil", tree, args{key: nil}, "zero",
 		},
 		{
-			"zero", tree, args{key: []byte("0")}, 0,
+			"value-nil", tree, args{key: []byte("zero")}, nil,
+		},
+		{
+			"normal", tree, args{key: []byte("0")}, 0,
 		},
 		{
 			"rewrite-data", tree, args{key: []byte("11")}, "rewrite-data",
