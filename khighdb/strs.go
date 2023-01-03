@@ -21,6 +21,7 @@ import (
 // If key already holds a value, it will be overwritten.
 // Any previous time to live associated with the key is
 // discarded o successful set operation.
+// Note the parameter can be nil and value can not be nil.
 func (db *KhighDB) Set(key, value []byte) error {
 	db.strIndex.mu.Lock()
 	defer db.strIndex.mu.Unlock()
@@ -36,6 +37,7 @@ func (db *KhighDB) Set(key, value []byte) error {
 
 // Get gets the value of the key.
 // If the key does not exist, ErrKeyNotFound is returned.
+// Note the parameter can be nil.
 func (db *KhighDB) Get(key []byte) ([]byte, error) {
 	db.strIndex.mu.RLock()
 	defer db.strIndex.mu.RUnlock()
