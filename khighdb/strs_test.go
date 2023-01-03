@@ -471,3 +471,32 @@ func testKhighDBDelete(t *testing.T, ioType IOType, mode DataIndexMode) {
 		})
 	}
 }
+
+func testKhighDBSetNX(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	type args struct {
+		key   []byte
+		value []byte
+	}
+	tests := []struct {
+		name    string
+		db      *KhighDB
+		args    []args
+		wantErr bool
+	}{
+		{
+			"nil-key", db, []args{args{key: nil, value: []byte("zero")}}, false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, arg := range tt.args {
+				if err := tt.db.SetNX(arg.key, arg.value); (err != nil) != tt.wantErr {
+					t.Errorf("Set() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			}
+		})
+	}
+}
