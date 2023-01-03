@@ -39,6 +39,7 @@ func (db *KhighDB) handleLogFileGC() {
 	if gcInternal <= 0 {
 		return
 	}
+	zap.L().Info("log file gc goroutine is listening")
 
 	quitFlag := make(chan os.Signal, 1)
 	signal.Notify(quitFlag, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

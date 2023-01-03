@@ -149,6 +149,8 @@ func newZSetIndex() *zsetIndex {
 
 // Open a KhighDB instance.
 func Open(options Options) (*KhighDB, error) {
+	zap.L().Info("Open KhighDB with config", zap.Any("option", options))
+
 	// Create the directory if the path does not exist.
 	if !util.PathExist(options.DBPath) {
 		if err := os.MkdirAll(options.DBPath, os.ModePerm); err != nil {
@@ -163,6 +165,7 @@ func Open(options Options) (*KhighDB, error) {
 	if err != nil {
 		return nil, err
 	}
+	zap.S().Infof("succeed to acquire flock of [%s]", lockPath)
 
 	db := &KhighDB{
 		activeLogFiles:   make(map[DataType]*storage.LogFile),
@@ -177,19 +180,23 @@ func Open(options Options) (*KhighDB, error) {
 	}
 
 	// Initialize the discard file.
+	zap.L().Info("initialize discard directory ...")
 	if err = db.initDiscard(); err != nil {
 		return nil, err
 	}
 	// Load the log files from disk.
+	zap.L().Info("load log files from disk ...")
 	if err = db.loadLogFiles(); err != nil {
 		return nil, err
 	}
 	// Load indexes from log files.
+	zap.L().Info("load indexes from log files ...")
 	if err := db.loadIndexFromLogFiles(); err != nil {
 		return nil, err
 	}
 
 	go db.handleLogFileGC()
+	zap.L().Info("KhighDB is opened successfully")
 	return db, nil
 }
 
