@@ -180,17 +180,17 @@ func Open(options Options) (*KhighDB, error) {
 	}
 
 	// Initialize the discard file.
-	zap.L().Info("initialize discard directory ...")
+	zap.L().Info("initializing discard directory")
 	if err = db.initDiscard(); err != nil {
 		return nil, err
 	}
 	// Load the log files from disk.
-	zap.L().Info("load log files from disk ...")
+	zap.L().Info("loading log files from disk")
 	if err = db.loadLogFiles(); err != nil {
 		return nil, err
 	}
 	// Load indexes from log files.
-	zap.L().Info("load indexes from log files ...")
+	zap.L().Info("loading indexes from log files")
 	if err := db.loadIndexFromLogFiles(); err != nil {
 		return nil, err
 	}
