@@ -1,6 +1,8 @@
 package khighdb
 
-import "time"
+import (
+	"time"
+)
 
 // @Author KHighness
 // @Update 2022-12-26
