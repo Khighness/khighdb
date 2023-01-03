@@ -81,7 +81,7 @@ func (db *KhighDB) MGet(keys [][]byte) ([][]byte, error) {
 	values := make([][]byte, len(keys))
 	for i, key := range keys {
 		val, err := db.getVal(db.strIndex.idxTree, key, String)
-		if err != nil && errors.Is(err, ErrKeyNotFound) {
+		if err != nil && !errors.Is(err, ErrKeyNotFound) {
 			return nil, err
 		}
 		values[i] = val
