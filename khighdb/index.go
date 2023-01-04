@@ -292,8 +292,8 @@ func (db *KhighDB) getVal(idxTree *art.AdaptiveRadixTree, key []byte, dataType D
 		return nil, ErrKeyNotFound
 	}
 
-	ts := time.Now().Unix()
-	if idxNode.expiredAt != 0 && idxNode.expiredAt <= ts {
+	nano := time.Now().UnixNano()
+	if idxNode.expiredAt != 0 && idxNode.expiredAt < nano {
 		return nil, ErrKeyNotFound
 	}
 
@@ -317,7 +317,7 @@ func (db *KhighDB) getVal(idxTree *art.AdaptiveRadixTree, key []byte, dataType D
 	if err != nil {
 		return nil, err
 	}
-	if entry.Type == storage.TypeDelete || (entry.ExpiredAt != 0 && entry.ExpiredAt < ts) {
+	if entry.Type == storage.TypeDelete || (entry.ExpiredAt != 0 && entry.ExpiredAt < nano) {
 		return nil, ErrKeyNotFound
 	}
 	return entry.Value, nil

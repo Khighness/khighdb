@@ -178,11 +178,12 @@ func (db *KhighDB) Delete(key []byte) error {
 }
 
 // SetEX sets key to hold the string value with expiration time.
+// Note that the smallest granularity supported is time.Millisecond.
 func (db *KhighDB) SetEX(key, value []byte, duration time.Duration) error {
 	db.strIndex.mu.Lock()
 	defer db.strIndex.mu.Unlock()
 
-	expiredAt := time.Now().Add(duration).Unix()
+	expiredAt := time.Now().Add(duration).UnixNano()
 	entry := &storage.LogEntry{Key: key, Value: value, ExpiredAt: expiredAt}
 	pos, err := db.writeLogEntry(entry, String)
 	if err != nil {
@@ -425,6 +426,7 @@ func (db *KhighDB) Scan(prefix []byte, pattern string, count int) ([][]byte, err
 }
 
 // Expire sets the expiration time for the given key.
+// Note that the smallest granularity supported is time.Millisecond.
 func (db *KhighDB) Expire(key []byte, duration time.Duration) error {
 	if duration <= 0 {
 		return nil
