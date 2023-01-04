@@ -3,22 +3,29 @@ package khighdb
 import (
 	"encoding/binary"
 	"errors"
-	"go.uber.org/zap"
 	"math"
 	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
 
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
 	"github.com/Khighness/khighdb/data/art"
 	"github.com/Khighness/khighdb/data/zset"
 	"github.com/Khighness/khighdb/flock"
+	"github.com/Khighness/khighdb/logger"
 	"github.com/Khighness/khighdb/storage"
 	"github.com/Khighness/khighdb/util"
 )
 
 // @Author KHighness
 // @Update 2022-12-26
+
+func init() {
+	logger.InitLogger(zapcore.DebugLevel)
+}
 
 var (
 	// ErrKeyNotFound represents key is not found.
