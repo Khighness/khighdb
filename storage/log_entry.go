@@ -15,8 +15,8 @@ import (
 //	+-----------+-----------+-----------+-----------+-----------+
 //	|   uint32  |    byte   |   uint32  |   uint32  |   int64   |
 //	+-----------+-----------+-----------+-----------+-----------+
-//	So, MaxMetaSize = 4 + 1 + 5 + 5 + 10 = 25
-const MaxMetaSize = 25
+//	So, MaxMetaSize = 4 + 1 + 4 + 4 + 8 = 21.
+const MaxMetaSize = 21
 
 // EntryType defines the type of log entry.
 type EntryType byte
