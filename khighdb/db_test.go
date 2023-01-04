@@ -97,7 +97,7 @@ func getKey(n int) []byte {
 
 // getValue16B return a value whose size is 16 bytes.
 func getValue16B() []byte {
-	return getKey(1 << 4)
+	return getValue(1 << 4)
 }
 
 // getValue4K returns a value whose size is 4 KB.
