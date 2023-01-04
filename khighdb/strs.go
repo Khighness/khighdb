@@ -441,7 +441,8 @@ func (db *KhighDB) Expire(key []byte, duration time.Duration) error {
 	return db.SetEX(key, val, duration)
 }
 
-// TTL gets time to live for the given key.
+// TTL gets time to live in milliseconds for the given key.
+// If the key does not exist, ErrKeyNotFound is returned.
 func (db *KhighDB) TTL(key []byte) (int64, error) {
 	db.strIndex.mu.Lock()
 	defer db.strIndex.mu.Unlock()
@@ -452,7 +453,7 @@ func (db *KhighDB) TTL(key []byte) (int64, error) {
 	}
 	var ttl int64
 	if node.expiredAt != 0 {
-		ttl = node.expiredAt - time.Now().Unix()
+		ttl = (node.expiredAt - time.Now().UnixNano()) / 1e6
 	}
 	return ttl, nil
 }
