@@ -1036,6 +1036,9 @@ func testKhighDBDecrBy(t *testing.T, ioType IOType, mode DataIndexMode) {
 			"normal-key-decr-99999", db, args{[]byte("k-1"), 99999}, []byte("-99999"), false, nil,
 		},
 		{
+			"normal-key-decr-9999999999", db, args{[]byte("k-1"), 9999999999}, []byte("-10000099998"), false, nil,
+		},
+		{
 			"int-overflow", db, args{[]byte("k-min"), 1}, []byte("0"), true, ErrIntegerOverflow,
 		},
 		{
