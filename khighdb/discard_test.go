@@ -6,17 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap/zapcore"
-
-	"github.com/Khighness/khighdb/logger"
 )
 
 // @Author KHighness
 // @Update 2022-12-28
 
-func init() {
-	logger.InitLogger(zapcore.DebugLevel)
-}
+//func init() {
+//	logger.InitLogger(zapcore.DebugLevel)
+//}
 
 func TestDiscard_newDiscard(t *testing.T) {
 	path := filepath.Join("/tmp", "khighdb-discard")
