@@ -221,14 +221,14 @@ func (d *discard) incr(fid uint32, delta int) (newDiscardSize int) {
 		discardSize := binary.LittleEndian.Uint32(buf)
 		newDiscardSize = int(discardSize + uint32(delta))
 		binary.LittleEndian.PutUint32(buf, uint32(newDiscardSize))
-		zap.L().Info("incr discard size", zap.Uint32("fid", fid),
+		zap.L().Info("increase discard size", zap.Uint32("fid", fid),
 			zap.Uint32("discardSize", discardSize), zap.Int("delta", delta))
 	} else {
 		buf = make([]byte, discardRecordSize)
 	}
 
 	if _, err = d.file.Write(buf, offset); err != nil {
-		zap.L().Error("incr discard size in discard file err", zap.Uint32("fid", fid), zap.Error(err))
+		zap.L().Error("increase discard size in discard file err", zap.Uint32("fid", fid), zap.Error(err))
 	}
 	return
 }
