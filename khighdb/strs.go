@@ -308,7 +308,7 @@ func (db *KhighDB) IncrBy(key []byte, delta int64) (int64, error) {
 func (db *KhighDB) Decr(key []byte) (int64, error) {
 	db.strIndex.mu.Lock()
 	defer db.strIndex.mu.Unlock()
-	return db.deltaBy(key, 1)
+	return db.deltaBy(key, -1)
 }
 
 // IncrBy decreases the value stored at key.
@@ -399,7 +399,7 @@ func (db *KhighDB) Scan(prefix []byte, pattern string, count int) ([][]byte, err
 	}
 
 	db.strIndex.mu.RLock()
-	db.strIndex.mu.RUnlock()
+	defer db.strIndex.mu.RUnlock()
 	if db.strIndex.idxTree == nil {
 		return nil, nil
 	}
