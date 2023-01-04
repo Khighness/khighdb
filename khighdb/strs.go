@@ -229,7 +229,7 @@ func (db *KhighDB) MSetNX(args ...[]byte) error {
 	for i := 0; i < len(args); i += 2 {
 		key := args[i]
 		val, err := db.getVal(db.strIndex.idxTree, key, String)
-		if err != nil {
+		if err != nil && !errors.Is(err, ErrKeyNotFound) {
 			return err
 		}
 		if val != nil {
