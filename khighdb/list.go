@@ -91,6 +91,16 @@ func (db *KhighDB) RPushX(key []byte, values ...[]byte) error {
 	return nil
 }
 
+// LPop removes and returns the first element of the list stored at key,
+func (db *KhighDB) LPop(key []byte) ([]byte, error) {
+	return nil, nil
+}
+
+// LPop removes and returns the last element of the list stored at key,
+func (db *KhighDB) RPop(key []byte) ([]byte, error) {
+	return nil, nil
+}
+
 // LIndex returns the element at index in the list stored at key.
 // If the index is 0, it returns the first element.
 // If the index a positive number, it returns the (index+1)-th element.
@@ -202,6 +212,14 @@ func (db *KhighDB) pushInternal(key []byte, val []byte, isLeft bool) error {
 	}
 	err = db.saveListMeta(idxTree, key, headSeq, tailSeq)
 	return err
+}
+
+// popInternal removes and returns the head or tail of the list stored at key.
+// Parameter isLeft controls the remove position, if true the head of the list
+// will be removed and returned, otherwise it will be the tail of the list will
+// be removed and returned.
+func (db *KhighDB) popInternal(key []byte, isLeft bool) ([]byte, error) {
+	return nil, nil
 }
 
 // listSequence converts logic index to phisical sequence.
