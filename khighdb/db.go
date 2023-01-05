@@ -3,7 +3,6 @@ package khighdb
 import (
 	"encoding/binary"
 	"errors"
-	"math"
 	"os"
 	"path/filepath"
 	"sync"
@@ -47,7 +46,6 @@ var (
 const (
 	logFileTypeNum   = 5
 	encodeHeaderSize = 10
-	initialListSeq   = math.MaxUint32 / 2
 	discardFilePath  = "DISCARD"
 	lockFileName     = "FLOCK"
 )
