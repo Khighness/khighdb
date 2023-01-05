@@ -92,7 +92,7 @@ func TestGet(t *testing.T) {
 
 // getKey returns a key whose size is 32 bytes.
 func getKey(n int) []byte {
-	return []byte("khighdb-store-bench-key" + fmt.Sprintf("%09d", n))
+	return []byte("khighdb-store-rand-key-" + fmt.Sprintf("%09d", n))
 }
 
 // getValue16B return a value whose size is 16 bytes.
