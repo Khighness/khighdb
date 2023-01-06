@@ -66,6 +66,34 @@ func TestKhighDB_RPushX(t *testing.T) {
 	})
 }
 
+func TestKhighDB_LPop(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBLPop(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBLPop(t, MMap, KeyOnlyMemMode)
+	})
+
+	t.Run("key-val-mem-mode", func(t *testing.T) {
+		testKhighDBLPop(t, FileIO, KeyValueMemMode)
+	})
+}
+
+func TestKhighDB_RPop(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBRPop(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBRPop(t, MMap, KeyOnlyMemMode)
+	})
+
+	t.Run("key-val-mem-mode", func(t *testing.T) {
+		testKhighDBRPop(t, FileIO, KeyValueMemMode)
+	})
+}
+
 func TestKhighDB_LIndex(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
 		testKhighDBLIndex(t, FileIO, KeyOnlyMemMode)
@@ -178,6 +206,50 @@ func testKhighDBPushX(t *testing.T, ioType IOType, mode DataIndexMode, isLeft bo
 			}
 		})
 	}
+}
+
+func testKhighDBLPop(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	listKey := getKey(0)
+
+	for i := 1; i <= 10; i++ {
+		val := []byte(fmt.Sprintf("v-%d", i))
+		_ = db.LPush(listKey, val)
+	}
+	for i := 10; i >= 1; i-- {
+		val := []byte(fmt.Sprintf("v-%d", i))
+		got, err := db.LPop(listKey)
+		assert.Nil(t, err)
+		assert.Equal(t, val, got)
+	}
+
+	got, err := db.LPop(listKey)
+	assert.Nil(t, err)
+	assert.Nil(t, got)
+}
+
+func testKhighDBRPop(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	listKey := getKey(0)
+
+	for i := 1; i <= 10; i++ {
+		val := []byte(fmt.Sprintf("v-%d", i))
+		_ = db.RPush(listKey, val)
+	}
+	for i := 10; i >= 1; i-- {
+		val := []byte(fmt.Sprintf("v-%d", i))
+		got, err := db.RPop(listKey)
+		assert.Nil(t, err)
+		assert.Equal(t, val, got)
+	}
+
+	got, err := db.RPop(listKey)
+	assert.Nil(t, err)
+	assert.Nil(t, got)
 }
 
 func testKhighDBLIndex(t *testing.T, ioType IOType, mode DataIndexMode) {

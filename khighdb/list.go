@@ -3,6 +3,7 @@ package khighdb
 import (
 	"encoding/binary"
 	"errors"
+	"go.uber.org/zap"
 	"math"
 
 	"github.com/Khighness/khighdb/data/art"
@@ -93,12 +94,16 @@ func (db *KhighDB) RPushX(key []byte, values ...[]byte) error {
 
 // LPop removes and returns the first element of the list stored at key,
 func (db *KhighDB) LPop(key []byte) ([]byte, error) {
-	return nil, nil
+	db.listIndex.mu.Lock()
+	defer db.listIndex.mu.Unlock()
+	return db.popInternal(key, true)
 }
 
 // LPop removes and returns the last element of the list stored at key,
 func (db *KhighDB) RPop(key []byte) ([]byte, error) {
-	return nil, nil
+	db.listIndex.mu.Lock()
+	defer db.listIndex.mu.Unlock()
+	return db.popInternal(key, false)
 }
 
 // LIndex returns the element at index in the list stored at key.
@@ -217,9 +222,62 @@ func (db *KhighDB) pushInternal(key []byte, val []byte, isLeft bool) error {
 // popInternal removes and returns the head or tail of the list stored at key.
 // Parameter isLeft controls the remove position, if true the head of the list
 // will be removed and returned, otherwise it will be the tail of the list will
-// be removed and returned.
+// be removed and returned. Also, if the list is empty, it returns nil.
 func (db *KhighDB) popInternal(key []byte, isLeft bool) ([]byte, error) {
-	return nil, nil
+	if db.listIndex.trees[string(key)] == nil {
+		return nil, nil
+	}
+	idxTree := db.listIndex.trees[string(key)]
+	headSeq, tailSeq, err := db.listMeta(idxTree, key)
+	if err != nil {
+		return nil, err
+	}
+	if tailSeq-headSeq-1 <= 0 {
+		return nil, nil
+	}
+
+	var seq = headSeq + 1
+	if !isLeft {
+		seq = tailSeq - 1
+	}
+	encKey := db.encodeListKey(key, seq)
+	val, err := db.getVal(idxTree, encKey, List)
+	if err != nil {
+		return nil, err
+	}
+
+	ent := &storage.LogEntry{Key: encKey, Type: storage.TypeDelete}
+	pos, err := db.writeLogEntry(ent, List)
+	if err != nil {
+		return nil, err
+	}
+	oldVal, updated := idxTree.Delete(encKey)
+	if isLeft {
+		headSeq++
+	} else {
+		tailSeq--
+	}
+	if err = db.saveListMeta(idxTree, key, headSeq, tailSeq); err != nil {
+		return nil, err
+	}
+
+	db.sendDiscard(oldVal, updated, List)
+	_, entrySize := storage.EncodeEntry(ent)
+	idxNode := &indexNode{fid: pos.fid, entrySize: entrySize}
+	select {
+	case db.discards[List].nodeChan <- idxNode:
+	default:
+		zap.L().Warn("failed to send node to discard channel")
+	}
+	if tailSeq-headSeq-1 == 0 {
+		if headSeq != initialListSeq || tailSeq != initialListSeq+1 {
+			headSeq = initialListSeq
+			tailSeq = initialListSeq + 1
+			_ = db.saveListMeta(idxTree, key, headSeq, tailSeq)
+		}
+		delete(db.listIndex.trees, string(key))
+	}
+	return val, nil
 }
 
 // listSequence converts logic index to phisical sequence.
