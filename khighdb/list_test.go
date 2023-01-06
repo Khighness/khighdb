@@ -1,7 +1,9 @@
 package khighdb
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -94,6 +96,34 @@ func TestKhighDB_RPop(t *testing.T) {
 	})
 }
 
+func TestKhighDB_LMove(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBLMove(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBLMove(t, MMap, KeyOnlyMemMode)
+	})
+
+	t.Run("key-val-mem-mode", func(t *testing.T) {
+		testKhighDBLMove(t, FileIO, KeyValueMemMode)
+	})
+}
+
+func TestKhighDB_LLen(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBRLLen(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBRLLen(t, MMap, KeyOnlyMemMode)
+	})
+
+	t.Run("key-val-mem-mode", func(t *testing.T) {
+		testKhighDBRLLen(t, FileIO, KeyValueMemMode)
+	})
+}
+
 func TestKhighDB_LIndex(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
 		testKhighDBLIndex(t, FileIO, KeyOnlyMemMode)
@@ -105,6 +135,34 @@ func TestKhighDB_LIndex(t *testing.T) {
 
 	t.Run("key-val-mem-mode", func(t *testing.T) {
 		testKhighDBLIndex(t, FileIO, KeyValueMemMode)
+	})
+}
+
+func TestKhighDB_LRange(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBLRange(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBLRange(t, MMap, KeyOnlyMemMode)
+	})
+
+	t.Run("key-val-mem-mode", func(t *testing.T) {
+		testKhighDBLRange(t, FileIO, KeyValueMemMode)
+	})
+}
+
+func TestKhighDB_LRem(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBLRem(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBLRem(t, MMap, KeyOnlyMemMode)
+	})
+
+	t.Run("key-val-mem-mode", func(t *testing.T) {
+		testKhighDBLRem(t, FileIO, KeyValueMemMode)
 	})
 }
 
@@ -252,6 +310,47 @@ func testKhighDBRPop(t *testing.T, ioType IOType, mode DataIndexMode) {
 	assert.Nil(t, got)
 }
 
+func testKhighDBLMove(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	listKey1 := getKey(1)
+	listKey2 := getKey(2)
+
+	for i := 1; i <= 10; i++ {
+		val := []byte(fmt.Sprintf("v-%d", i))
+		_ = db.RPush(listKey1, val)
+	}
+	for i := 1; i <= 10; i++ {
+		val := []byte(fmt.Sprintf("v-%d", i))
+		rem, err := db.LMove(listKey1, listKey2, true, true)
+		assert.Nil(t, err)
+		assert.Equal(t, val, rem)
+	}
+	for i := 10; i >= 1; i-- {
+		val := []byte(fmt.Sprintf("v-%d", i))
+		got, err := db.LPop(listKey2)
+		assert.Nil(t, err)
+		assert.Equal(t, val, got)
+	}
+}
+
+func testKhighDBRLLen(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	listKey := getKey(0)
+
+	for i := 1; i <= 10; i++ {
+		_ = db.RPush(listKey, getValue16B())
+		assert.Equal(t, i, db.LLen(listKey))
+	}
+	for i := 1; i <= 10; i++ {
+		_, _ = db.RPop(listKey)
+		assert.Equal(t, 10-i, db.LLen(listKey))
+	}
+}
+
 func testKhighDBLIndex(t *testing.T, ioType IOType, mode DataIndexMode) {
 	db := newKhighDB(ioType, mode)
 	defer destroyDB(db)
@@ -271,7 +370,7 @@ func testKhighDBLIndex(t *testing.T, ioType IOType, mode DataIndexMode) {
 		assert.Equal(t, val, got)
 	}
 
-	// 10 9 8 7 6 5 4 3 2 1
+	// list: 10 9 8 7 6 5 4 3 2 1
 	for i := 1; i <= 10; i++ {
 		val := []byte(fmt.Sprintf("v-%d", i))
 		got, err := db.LIndex(listKey, 10-i)
@@ -296,7 +395,7 @@ func testKhighDBLIndex(t *testing.T, ioType IOType, mode DataIndexMode) {
 		assert.Equal(t, val, got)
 	}
 
-	// 10 9 8 7 6 5 4 3 2 1 1 2 3 4 5 6 7 8 9 10
+	// list: 10 9 8 7 6 5 4 3 2 1 1 2 3 4 5 6 7 8 9 10
 	for i := 1; i <= 10; i++ {
 		val := []byte(fmt.Sprintf("v-%d", i))
 		got, err := db.LIndex(listKey, 9+i)
@@ -311,4 +410,168 @@ func testKhighDBLIndex(t *testing.T, ioType IOType, mode DataIndexMode) {
 	assert.Equal(t, ErrIndexOutOfRange, err)
 	_, err = db.LIndex(listKey, -21)
 	assert.Equal(t, ErrIndexOutOfRange, err)
+}
+
+func testKhighDBLRange(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	listKey := getKey(0)
+	_, err := db.LRange(listKey, 0, 0)
+	assert.Equal(t, ErrKeyNotFound, err)
+
+	for i := 1; i <= 10; i++ {
+		_ = db.RPush(listKey, []byte(fmt.Sprintf("v-%d", i)))
+	}
+
+	type args struct {
+		start int
+		end   int
+	}
+	tests := []struct {
+		name    string
+		db      *KhighDB
+		args    args
+		want    [][]byte
+		err     error
+		wantErr bool
+	}{
+		{
+			"want[0, 0]", db, args{0, 0}, [][]byte{[]byte("v-1")}, nil, false,
+		},
+		{
+			"want[8, 9]", db, args{8, 9}, [][]byte{[]byte("v-9"), []byte("v-10")}, nil, false,
+		},
+		{
+			"want[8, 11]", db, args{8, 11}, [][]byte{[]byte("v-9"), []byte("v-10")}, nil, false,
+		},
+		{
+			"want[5, 4]", db, args{5, 3}, [][]byte{}, ErrIndexOutOfRange, true,
+		},
+		{
+			"want[-2, -1]", db, args{-2, -1}, [][]byte{[]byte("v-9"), []byte("v-10")}, nil, false,
+		},
+		{
+			"want[-13, -10]", db, args{-13, -10}, [][]byte{[]byte("v-1")}, nil, false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := db.LRange(listKey, tt.args.start, tt.args.end)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LRange() error = %v, wantErr = %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && !errors.Is(err, tt.err) {
+				t.Errorf("LRange() error = %v, excepted err = %v", err, tt.err)
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("LRange() got = %v, want = %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func testKhighDBLRem(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	listKey := []byte("my_list")
+	v, err := db.LRem(listKey, 1, getKey(1))
+	assert.Equal(t, 0, v)
+	assert.Nil(t, err)
+	v, err = db.LRem(listKey, 0, getKey(1))
+	assert.Equal(t, 0, v)
+	assert.Nil(t, err)
+	v, err = db.LRem(listKey, -1, getKey(1))
+	assert.Equal(t, 0, v)
+	assert.Nil(t, err)
+
+	err = db.RPush(listKey, getKey(1), getKey(2), getKey(1), getKey(3), getKey(3), getKey(4))
+	assert.Nil(t, err)
+
+	// list : 1 2 1 3 3 4
+	expected := [][]byte{getKey(1), getKey(2), getKey(1), getKey(3), getKey(3), getKey(4)}
+	v, err = db.LRem(listKey, 1, getKey(5))
+	assert.Equal(t, 0, v)
+	assert.Nil(t, err)
+	values, err := db.LRange(listKey, 0, -1)
+	assert.Equal(t, expected, values)
+	assert.Nil(t, err)
+
+	// list : 1 2 1 3 3 4
+	expected = [][]byte{getKey(1), getKey(2), getKey(1), getKey(3), getKey(3), getKey(4)}
+	v, err = db.LRem(listKey, 0, getKey(5))
+	assert.Equal(t, 0, v)
+	assert.Nil(t, err)
+	values, err = db.LRange(listKey, 0, -1)
+	assert.Equal(t, expected, values)
+	assert.Nil(t, err)
+
+	// list : 1 2 1 3 3 4
+	expected = [][]byte{getKey(1), getKey(2), getKey(1), getKey(3), getKey(3), getKey(4)}
+	v, err = db.LRem(listKey, -1, getKey(5))
+	assert.Equal(t, 0, v)
+	assert.Nil(t, err)
+	values, err = db.LRange(listKey, 0, -1)
+	assert.Equal(t, expected, values)
+	assert.Nil(t, err)
+
+	// list : 1 2 1 3 3 4
+	expected = [][]byte{getKey(2), getKey(3), getKey(3), getKey(4)}
+	v, err = db.LRem(listKey, 3, getKey(1))
+	assert.Equal(t, 2, v)
+	assert.Nil(t, err)
+	values, err = db.LRange(listKey, 0, -1)
+	assert.Equal(t, expected, values)
+	assert.Nil(t, err)
+
+	// list : 2 3 3 4
+	expected = [][]byte{getKey(2), getKey(4)}
+	v, err = db.LRem(listKey, -3, getKey(3))
+	assert.Equal(t, 2, v)
+	assert.Nil(t, err)
+	values, err = db.LRange(listKey, 0, -1)
+	assert.Equal(t, expected, values)
+	assert.Nil(t, err)
+
+	// list : 2 4
+	expected = [][]byte{getKey(4)}
+	v, err = db.LRem(listKey, 0, getKey(2))
+	assert.Equal(t, 1, v)
+	assert.Nil(t, err)
+	values, err = db.LRange(listKey, 0, -1)
+	assert.Equal(t, expected, values)
+	assert.Nil(t, err)
+
+	// list : 4
+	err = db.RPush(listKey, getKey(3), getKey(2), getKey(1))
+	assert.Nil(t, err)
+
+	// list : 4 3 2 1
+	expected = [][]byte{getKey(3), getKey(2), getKey(1)}
+	v, err = db.LRem(listKey, 1, getKey(4))
+	assert.Equal(t, 1, v)
+	assert.Nil(t, err)
+	values, err = db.LRange(listKey, 0, -1)
+	assert.Equal(t, expected, values)
+	assert.Nil(t, err)
+
+	// list : 3 2 1
+	expected = [][]byte{getKey(3), getKey(2)}
+	v, err = db.LRem(listKey, -1, getKey(1))
+	assert.Equal(t, 1, v)
+	assert.Nil(t, err)
+	values, err = db.LRange(listKey, 0, -1)
+	assert.Equal(t, expected, values)
+	assert.Nil(t, err)
+
+	// list : 3 2
+	expected = [][]byte{getKey(3)}
+	v, err = db.LRem(listKey, 0, getKey(2))
+	assert.Equal(t, 1, v)
+	assert.Nil(t, err)
+	values, err = db.LRange(listKey, 0, -1)
+	assert.Equal(t, expected, values)
+	assert.Nil(t, err)
 }
