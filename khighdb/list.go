@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"go.uber.org/zap"
 	"math"
+
+	"go.uber.org/zap"
 
 	"github.com/Khighness/khighdb/data/art"
 	"github.com/Khighness/khighdb/storage"
@@ -38,10 +39,10 @@ func (db *KhighDB) LPush(key []byte, values ...[]byte) error {
 	return nil
 }
 
-// LPushX inserts a specified values at the head of the list stored at key,
-// only if key already exists and holds a list.
-// In contrary to LPush, no operation will be performed and ErrKeyNotFound
-// will be returned if the key does not exist.
+// LPushX inserts a specified values at the head of the list
+// stored at key, only if key already exists and holds a list.
+// In contrary to LPush, no operation will be performed and
+// ErrKeyNotFound will be returned if the key does not exist.
 func (db *KhighDB) LPushX(key []byte, values ...[]byte) error {
 	db.listIndex.mu.Lock()
 	defer db.listIndex.mu.Unlock()
@@ -74,10 +75,10 @@ func (db *KhighDB) RPush(key []byte, values ...[]byte) error {
 	return nil
 }
 
-// RPushX inserts a specified values at the head of the list stored at key,
-// only if key already exists and holds a list.
-// In contrary to LPush, no operation will be performed and ErrKeyNotFound
-// will be returned if the key does not exist.
+// RPushX inserts a specified values at the head of the list
+// stored at key, only if key already exists and holds a list.
+// In contrary to LPush, no operation will be performed and
+// ErrKeyNotFound will be returned if the key does not exist.
 func (db *KhighDB) RPushX(key []byte, values ...[]byte) error {
 	db.listIndex.mu.Lock()
 	defer db.listIndex.mu.Unlock()
@@ -264,7 +265,7 @@ func (db *KhighDB) LRange(key []byte, start, end int) (values [][]byte, err erro
 }
 
 // LRem removed the first count occurrences of elements equal to element from the list stored at key.
-//  The count argument influences the operation in the follwing ways:
+//  The count argument influences the operation in the following ways:
 //  - count > 0: Remove elements equal to element moving from head to tail.
 //  - count < 0: Remove elements equal to element moving from tail to head.
 //  - count = 0: Remove all elements equal to element.
@@ -511,7 +512,7 @@ func (db *KhighDB) popInternal(key []byte, isLeft bool) ([]byte, error) {
 	return val, nil
 }
 
-// listSequence converts logic index to phisical sequence.
+// listSequence converts logic index to phsical sequence.
 func (db *KhighDB) listSequence(headSeq, tailSeq uint32, index int) (uint32, error) {
 	var seq uint32
 
