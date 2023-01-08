@@ -186,10 +186,10 @@ func (db *KhighDB) HExists(key, field []byte) (bool, error) {
 	}
 	idxTree := db.hashIndex.trees[string(key)]
 	val, err := db.getVal(idxTree, field, Hash)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrKeyNotFound) {
 		return false, err
 	}
-	return val != nil, err
+	return val != nil, nil
 }
 
 // HLen returns the number of fields contained in the hash stored at key.
