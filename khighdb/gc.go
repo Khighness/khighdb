@@ -17,7 +17,7 @@ import (
 // @Update 2022-12-31
 
 // sendDiscard sends a node to the discard node channel to increase discard size when
-// the key-value pair is updated deleted. If updated is false, nothing will be done.
+// the key-value pair is updated or deleted. If updated is false, nothing will be done.
 func (db *KhighDB) sendDiscard(oldNode interface{}, updated bool, dataType DataType) {
 	if !updated || oldNode == nil {
 		return
