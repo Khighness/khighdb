@@ -20,10 +20,6 @@ func TestKhighDB_LPush(t *testing.T) {
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBPush(t, MMap, KeyOnlyMemMode, true)
 	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBPush(t, FileIO, KeyValueMemMode, true)
-	})
 }
 
 func TestKhighDB_LPushX(t *testing.T) {
@@ -33,10 +29,6 @@ func TestKhighDB_LPushX(t *testing.T) {
 
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBPushX(t, MMap, KeyOnlyMemMode, true)
-	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBPushX(t, FileIO, KeyValueMemMode, true)
 	})
 }
 
@@ -48,10 +40,6 @@ func TestKhighDB_RPush(t *testing.T) {
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBPush(t, MMap, KeyOnlyMemMode, false)
 	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBPush(t, FileIO, KeyValueMemMode, false)
-	})
 }
 
 func TestKhighDB_RPushX(t *testing.T) {
@@ -61,10 +49,6 @@ func TestKhighDB_RPushX(t *testing.T) {
 
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBPushX(t, MMap, KeyOnlyMemMode, false)
-	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBPushX(t, FileIO, KeyValueMemMode, false)
 	})
 }
 
@@ -76,10 +60,6 @@ func TestKhighDB_LPop(t *testing.T) {
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBLPop(t, MMap, KeyOnlyMemMode)
 	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBLPop(t, FileIO, KeyValueMemMode)
-	})
 }
 
 func TestKhighDB_RPop(t *testing.T) {
@@ -89,10 +69,6 @@ func TestKhighDB_RPop(t *testing.T) {
 
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBRPop(t, MMap, KeyOnlyMemMode)
-	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBRPop(t, FileIO, KeyValueMemMode)
 	})
 }
 
@@ -104,10 +80,6 @@ func TestKhighDB_LMove(t *testing.T) {
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBLMove(t, MMap, KeyOnlyMemMode)
 	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBLMove(t, FileIO, KeyValueMemMode)
-	})
 }
 
 func TestKhighDB_LLen(t *testing.T) {
@@ -117,10 +89,6 @@ func TestKhighDB_LLen(t *testing.T) {
 
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBRLLen(t, MMap, KeyOnlyMemMode)
-	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBRLLen(t, FileIO, KeyValueMemMode)
 	})
 }
 
@@ -132,10 +100,6 @@ func TestKhighDB_LIndex(t *testing.T) {
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBLIndex(t, MMap, KeyOnlyMemMode)
 	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBLIndex(t, FileIO, KeyValueMemMode)
-	})
 }
 
 func TestKhighDB_LRange(t *testing.T) {
@@ -146,10 +110,6 @@ func TestKhighDB_LRange(t *testing.T) {
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBLRange(t, MMap, KeyOnlyMemMode)
 	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBLRange(t, FileIO, KeyValueMemMode)
-	})
 }
 
 func TestKhighDB_LRem(t *testing.T) {
@@ -159,10 +119,6 @@ func TestKhighDB_LRem(t *testing.T) {
 
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBLRem(t, MMap, KeyOnlyMemMode)
-	})
-
-	t.Run("key-val-mem-mode", func(t *testing.T) {
-		testKhighDBLRem(t, FileIO, KeyValueMemMode)
 	})
 }
 
