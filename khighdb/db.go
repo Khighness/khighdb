@@ -154,7 +154,7 @@ func newZSetIndex() *zsetIndex {
 
 // Open a KhighDB instance.
 func Open(options Options) (*KhighDB, error) {
-	zap.L().Info("Open KhighDB with config", zap.Any("option", options))
+	zap.S().Infof("Open KhighDB with config: %v", options)
 
 	// Create the directory if the path does not exist.
 	if !util.PathExist(options.DBPath) {

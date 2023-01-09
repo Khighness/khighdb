@@ -1,6 +1,8 @@
 package khighdb
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -78,6 +80,28 @@ type Options struct {
 	// and be used for log file gc.
 	// Default value is 8MB.
 	DiscardBufferSize int
+}
+
+func (o Options) String() string {
+	var optStr string
+	optStr += "\n ============================================================================"
+	optStr += "\n DBPath: " + o.DBPath
+	if o.IndexMode == KeyValueMemMode {
+		optStr += "\n IndexMode: KeyValueMemMode"
+	} else {
+		optStr += "\n IndexMode: KeyOnlyMemMode"
+	}
+	if o.IoType == FileIO {
+		optStr += "\n IOType: FileIO"
+	} else {
+		optStr += "\n IOType: MMap"
+	}
+	optStr += "\n Sync: " + strconv.FormatBool(o.Sync)
+	optStr += fmt.Sprintf("\n LogFileGCInternal: %v", o.LogFileGCInternal)
+	optStr += "\n LogFileSizeThreshold: " + strconv.FormatInt(o.LogFileSizeThreshold, 10)
+	optStr += "\n DiscardBufferSize: " + strconv.FormatInt(int64(o.DiscardBufferSize), 10)
+	optStr += "\n ============================================================================"
+	return optStr
 }
 
 // DefaultOptions returns the default options for opening a KhighDB.
