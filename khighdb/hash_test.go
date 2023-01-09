@@ -582,9 +582,25 @@ func testKhighDBHRandField(t *testing.T, ioType IOType, mode DataIndexMode) {
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(res))
 
+	res, err = db.HRandField(hashKey, 1, true)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(res))
+	for i := 0; i < len(res); i += 2 {
+		field, value := res[i], res[i+1]
+		t.Logf("HRandField() field = %v, value = %v", string(field), string(value))
+	}
+
 	res, err = db.HRandField(hashKey, 5, true)
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(res))
+	for i := 0; i < len(res); i += 2 {
+		field, value := res[i], res[i+1]
+		t.Logf("HRandField() field = %v, value = %v", string(field), string(value))
+	}
+
+	res, err = db.HRandField(hashKey, -1, true)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(res))
 	for i := 0; i < len(res); i += 2 {
 		field, value := res[i], res[i+1]
 		t.Logf("HRandField() field = %v, value = %v", string(field), string(value))
