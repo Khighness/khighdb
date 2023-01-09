@@ -73,13 +73,83 @@ func TestKhighDB_HExists(t *testing.T) {
 	})
 }
 
-func TestKhighDB_HLe(t *testing.T) {
+func TestKhighDB_HLen(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
 		testKhighDBHLen(t, FileIO, KeyOnlyMemMode)
 	})
 
 	t.Run("mmap", func(t *testing.T) {
 		testKhighDBHLen(t, MMap, KeyOnlyMemMode)
+	})
+}
+
+func TestKhighDB_HKeys(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBHKeys(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBHKeys(t, MMap, KeyOnlyMemMode)
+	})
+}
+
+func TestKhighDB_HVals(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBHVals(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBHVals(t, MMap, KeyOnlyMemMode)
+	})
+}
+
+func TestKhighDB_HGetAll(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBHGetAll(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBHGetAll(t, MMap, KeyOnlyMemMode)
+	})
+}
+
+func TestKhighDB_HStrLen(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBHStrLen(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBHStrLen(t, MMap, KeyOnlyMemMode)
+	})
+}
+
+func TestKhighDB_HScan(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBHScan(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBHScan(t, MMap, KeyOnlyMemMode)
+	})
+}
+
+func TestKhighDB_HIncrBy(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBHIncrBy(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBHIncrBy(t, MMap, KeyOnlyMemMode)
+	})
+}
+
+func TestKhighDB_HRandField(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		testKhighDBHRandField(t, FileIO, KeyOnlyMemMode)
+	})
+
+	t.Run("mmap", func(t *testing.T) {
+		testKhighDBHRandField(t, MMap, KeyOnlyMemMode)
 	})
 }
 
@@ -335,5 +405,196 @@ func testKhighDBHLen(t *testing.T, ioType IOType, mode DataIndexMode) {
 		_, _ = db.HDel(hashKey, getKey(i))
 		l = db.HLen(hashKey)
 		assert.Equal(t, 10-i, l)
+	}
+}
+
+func testKhighDBHKeys(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	hashKey := []byte("hash-key")
+
+	keys, err := db.HKeys(hashKey)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(keys))
+
+	err = db.HSet(hashKey, getKey(1), getValue16B())
+	assert.Nil(t, err)
+	keys, err = db.HKeys(hashKey)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(keys))
+	assert.Equal(t, getKey(1), keys[0])
+
+	err = db.HSet(hashKey, getKey(1), getValue16B())
+	assert.Nil(t, err)
+	keys, err = db.HKeys(hashKey)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(keys))
+	assert.Equal(t, getKey(1), keys[0])
+
+	err = db.HSet(hashKey, getKey(2), getValue16B())
+	assert.Nil(t, err)
+	keys, err = db.HKeys(hashKey)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(keys))
+	assert.Equal(t, [][]byte{getKey(1), getKey(2)}, keys)
+
+	writeCount := 1000
+	for i := 0; i < writeCount; i++ {
+		err := db.HSet(hashKey, getKey(i+100), getValue16B())
+		assert.Nil(t, err)
+	}
+	keys, err = db.HKeys(hashKey)
+	assert.Nil(t, err)
+	for i := 0; i < writeCount; i++ {
+		assert.Equal(t, getKey(i+100), keys[i+2])
+	}
+}
+
+func testKhighDBHVals(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	hashKey := []byte("hash-key")
+	hashVal := getValue16B()
+
+	for i := 1; i <= 3; i++ {
+		_ = db.HSet(hashKey, getKey(i), hashVal)
+	}
+	got, err := db.HVals(hashKey)
+	assert.Nil(t, err)
+	assert.Equal(t, [][]byte{hashVal, hashVal, hashVal}, got)
+
+	for i := 1; i <= 3; i++ {
+		_, _ = db.HDel(hashKey, getKey(i))
+		got, err = db.HVals(hashKey)
+		assert.Nil(t, err)
+		assert.Equal(t, 3-i, len(got))
+	}
+}
+
+func testKhighDBHGetAll(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	hashKey := []byte("hash-key")
+	hashVal := getValue16B()
+
+	for i := 1; i <= 3; i++ {
+		_ = db.HSet(hashKey, getKey(i), hashVal)
+	}
+	got, err := db.HGetAll(hashKey)
+	assert.Nil(t, err)
+	assert.Equal(t, [][]byte{getKey(1), hashVal, getKey(2), hashVal, getKey(3), hashVal}, got)
+
+	for i := 1; i <= 3; i++ {
+		_, _ = db.HDel(hashKey, getKey(i))
+		got, err = db.HGetAll(hashKey)
+		assert.Nil(t, err)
+		assert.Equal(t, 2*(3-i), len(got))
+	}
+}
+
+func testKhighDBHStrLen(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	hashKey := []byte("hash-key")
+	l := db.HStrLen(hashKey, getKey(1))
+	assert.Equal(t, 0, l)
+
+	_ = db.HSet(hashKey, getKey(1), []byte("1"))
+	l = db.HStrLen(hashKey, getKey(1))
+	assert.Equal(t, 1, l)
+
+	_ = db.HSet(hashKey, getKey(2), []byte("22"))
+	l = db.HStrLen(hashKey, getKey(2))
+	assert.Equal(t, 2, l)
+}
+
+func testKhighDBHScan(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	hashKey := []byte("hash-key")
+	for i := 1; i <= 10; i++ {
+		_ = db.HSet(hashKey, []byte(fmt.Sprintf("k+%d", i)), []byte(fmt.Sprintf("v+%d", i)))
+		_ = db.HSet(hashKey, []byte(fmt.Sprintf("k-%d", i)), []byte(fmt.Sprintf("v-%d", i)))
+	}
+
+	result, err := db.HScan(hashKey, []byte("k-"), "[k]{1}[-]{1}[\\d]+", 5)
+	assert.Nil(t, err)
+	assert.Equal(t, 10, len(result))
+
+	result, err = db.HScan(hashKey, []byte("k+"), "[k]{1}[-]{1}[\\d]+", 5)
+	assert.Nil(t, err)
+	for _, field := range result {
+		assert.Nil(t, field)
+	}
+
+	result, err = db.HScan(hashKey, []byte("k"), "[k]{1}", 10)
+	assert.Nil(t, err)
+	assert.Equal(t, 20, len(result))
+
+	result, err = db.HScan(hashKey, []byte("k"), "", 20)
+	assert.Nil(t, err)
+	assert.Equal(t, 40, len(result))
+
+	result, err = db.HScan(hashKey, []byte("kk"), "", 0)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(result))
+}
+
+func testKhighDBHIncrBy(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	hashKey := []byte("hash-key")
+	res, err := db.HIncrBy(hashKey, getKey(0), 0)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(0), res)
+
+	sum := 0
+	for i := 1; i <= 100; i++ {
+		sum += i
+		res, err = db.HIncrBy(hashKey, getKey(0), int64(i))
+		assert.Nil(t, err)
+		assert.Equal(t, int64(sum), res)
+	}
+	for i := 1; i <= 100; i++ {
+		sum -= i
+		res, err = db.HIncrBy(hashKey, getKey(0), int64(-i))
+		assert.Nil(t, err)
+		assert.Equal(t, int64(sum), res)
+	}
+}
+
+func testKhighDBHRandField(t *testing.T, ioType IOType, mode DataIndexMode) {
+	db := newKhighDB(ioType, mode)
+	defer destroyDB(db)
+
+	hashKey := []byte("hash-key")
+	for i := 1; i <= 3; i++ {
+		_ = db.HSet(hashKey, getKey(i), getValue16B())
+	}
+
+	res, err := db.HRandField(hashKey, 0, true)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(res))
+
+	res, err = db.HRandField(hashKey, 5, true)
+	assert.Nil(t, err)
+	assert.Equal(t, 6, len(res))
+	for i := 0; i < len(res); i += 2 {
+		field, value := res[i], res[i+1]
+		t.Logf("HRandField() field = %v, value = %v", string(field), string(value))
+	}
+
+	res, err = db.HRandField(hashKey, -5, true)
+	assert.Nil(t, err)
+	assert.Equal(t, 10, len(res))
+	for i := 0; i < len(res); i += 2 {
+		field, value := res[i], res[i+1]
+		t.Logf("HRandField() field = %v, value = %v", string(field), string(value))
 	}
 }
