@@ -29,7 +29,7 @@ func (db *KhighDB) sendDiscard(oldNode interface{}, updated bool, dataType DataT
 	select {
 	case db.discards[dataType].nodeChan <- node:
 	default:
-		zap.L().Warn("failed to send node to discard channel")
+		zap.L().Warn("Failed to send node to discard channel")
 	}
 }
 
@@ -39,7 +39,7 @@ func (db *KhighDB) handleLogFileGC() {
 	if gcInternal <= 0 {
 		return
 	}
-	zap.L().Info("log file gc goroutine is listening")
+	zap.L().Info("Log file gc goroutine is listening")
 
 	quitFlag := make(chan os.Signal, 1)
 	signal.Notify(quitFlag, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
@@ -49,16 +49,16 @@ func (db *KhighDB) handleLogFileGC() {
 	for {
 		select {
 		case <-ticker.C:
-			zap.L().Info("execute log file gc periodically", zap.Any("internal", gcInternal))
+			zap.L().Info("Execute log file gc periodically", zap.Any("internal", gcInternal))
 			if atomic.LoadInt32(&db.gcState) > 0 {
-				zap.S().Warn("log file gc is running, skip it")
+				zap.S().Warn("Log file gc is running, skip it")
 				break
 			}
 			for dataType := String; dataType < logFileTypeNum; dataType++ {
 				go func(dataType DataType) {
 					err := db.doRunGC(dataType, -1, db.options.LogFileGCRatio)
 					if err != nil {
-						zap.L().Error("log file gc err", zap.Int8("dataType", dataType), zap.Error(err))
+						zap.L().Error("Log file gc err", zap.Int8("dataType", dataType), zap.Error(err))
 					}
 				}(dataType)
 			}
@@ -223,11 +223,11 @@ func (db *KhighDB) doRunGC(dataType DataType, archivedLogFileId int, gcRatio flo
 		db.mu.Lock()
 		delete(db.archivedLogFiles[dataType], fid)
 		if err = archivedLogFile.Delete(); err != nil {
-			zap.L().Warn("failed to delete archived log file", zap.Error(err))
+			zap.L().Warn("Failed to delete archived log file", zap.Error(err))
 		}
 		db.mu.Unlock()
 		db.discards[dataType].clear(fid)
-		zap.L().Info("archived log file gc ends", zap.Uint32("fid", fid))
+		zap.L().Info("Archived log file gc ends", zap.Uint32("fid", fid))
 	}
 
 	return nil
