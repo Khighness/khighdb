@@ -133,7 +133,7 @@ func (db *KhighDB) buildSetsIndex(ent *storage.LogEntry, pos *valuePos) {
 	}
 
 	if err := db.setIndex.murhash.Write(ent.Value); err != nil {
-		zap.L().Error("failed to write murmur hash", zap.Error(err))
+		zap.L().Error("Failed to write murmur hash", zap.Error(err))
 	}
 	sum := db.setIndex.murhash.EncodeSum128()
 	db.setIndex.murhash.Reset()
@@ -165,7 +165,7 @@ func (db *KhighDB) buildZSetIndex(ent *storage.LogEntry, pos *valuePos) {
 	key, scoreBuf := db.decodeKey(ent.Key)
 	score, _ := util.StrToFloat64(string(scoreBuf))
 	if err := db.zsetIndex.murhash.Write(ent.Value); err != nil {
-		zap.L().Fatal("failed to write murmur hash", zap.Error(err))
+		zap.L().Fatal("Failed to write murmur hash", zap.Error(err))
 	}
 	sum := db.zsetIndex.murhash.EncodeSum128()
 	db.zsetIndex.murhash.Reset()
@@ -212,7 +212,7 @@ func (db *KhighDB) loadIndexFromLogFiles() error {
 				logFile = db.archivedLogFiles[dataType][fid]
 			}
 			if logFile == nil {
-				zap.L().Fatal("log file is nil, failed to open db")
+				zap.L().Fatal("Log file is nil, failed to open db")
 			}
 
 			var offset int64
@@ -222,7 +222,7 @@ func (db *KhighDB) loadIndexFromLogFiles() error {
 					if err == io.EOF || err == storage.ErrEndOfEntry {
 						break
 					}
-					zap.L().Fatal("read log entry from file err, failed to open db")
+					zap.L().Fatal("Read log entry from file err, failed to open db")
 				}
 				pos := &valuePos{fid: fid, offset: offset}
 				db.buildIndex(dataType, entry, pos)

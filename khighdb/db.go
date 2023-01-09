@@ -170,7 +170,7 @@ func Open(options Options) (*KhighDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	zap.S().Infof("succeed to acquire flock of [%s]", lockPath)
+	zap.S().Infof("Succeed to acquire flock of [%s]", lockPath)
 
 	db := &KhighDB{
 		activeLogFiles:   make(map[DataType]*storage.LogFile),
@@ -185,17 +185,17 @@ func Open(options Options) (*KhighDB, error) {
 	}
 
 	// Initialize the discard file.
-	zap.L().Info("initializing discard directory")
+	zap.L().Info("Initializing discard directory")
 	if err = db.initDiscard(); err != nil {
 		return nil, err
 	}
 	// Load the log files from disk.
-	zap.L().Info("loading log files from disk")
+	zap.L().Info("Loading log files from disk")
 	if err = db.loadLogFiles(); err != nil {
 		return nil, err
 	}
 	// Load indexes from log files.
-	zap.L().Info("loading indexes from log files")
+	zap.L().Info("Loading indexes from log files")
 	if err := db.loadIndexFromLogFiles(); err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (db *KhighDB) Close() error {
 	// Release the file lock.
 	if db.fileLock != nil {
 		if err := db.fileLock.Release(); err != nil {
-			zap.L().Error("failed to release file lock", zap.Error(err))
+			zap.L().Error("Failed to release file lock", zap.Error(err))
 		}
 	}
 

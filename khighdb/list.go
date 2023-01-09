@@ -499,7 +499,7 @@ func (db *KhighDB) popInternal(key []byte, isLeft bool) ([]byte, error) {
 	select {
 	case db.discards[List].nodeChan <- idxNode:
 	default:
-		zap.L().Warn("failed to send node to discard channel")
+		zap.L().Warn("Failed to send node to discard channel")
 	}
 	if tailSeq-headSeq-1 == 0 {
 		if headSeq != initialListSeq || tailSeq != initialListSeq+1 {

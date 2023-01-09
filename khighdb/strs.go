@@ -150,7 +150,7 @@ func (db *KhighDB) GetDel(key []byte) ([]byte, error) {
 	select {
 	case db.discards[String].nodeChan <- node:
 	default:
-		zap.L().Warn("failed to send node to discard channel")
+		zap.L().Warn("Failed to send node to discard channel")
 	}
 	return val, nil
 }
@@ -172,7 +172,7 @@ func (db *KhighDB) Delete(key []byte) error {
 	select {
 	case db.discards[String].nodeChan <- node:
 	default:
-		zap.L().Warn("failed to send node to discard channel")
+		zap.L().Warn("Failed to send node to discard channel")
 	}
 	return nil
 }

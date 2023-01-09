@@ -172,7 +172,7 @@ func (db *KhighDB) HDel(key []byte, fields ...[]byte) (int, error) {
 		select {
 		case db.discards[Hash].nodeChan <- node:
 		default:
-			zap.L().Warn("failed to send node to discard channel")
+			zap.L().Warn("Failed to send node to discard channel")
 		}
 	}
 	return count, nil

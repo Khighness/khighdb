@@ -124,7 +124,7 @@ func (d *discard) getCCL(activeFid uint32, ratio float64) ([]uint32, error) {
 			curRatio = float64(discardSize) / float64(totalSize)
 		}
 		if curRatio >= ratio && fid != activeFid {
-			zap.L().Debug("add fid to ccl", zap.Uint32("fid", fid),
+			zap.L().Debug("Add fid to ccl", zap.Uint32("fid", fid),
 				zap.Uint32("total", totalSize), zap.Uint32("discard", discardSize), zap.Float64("ratio", curRatio))
 			ccl = append(ccl, fid)
 		}
@@ -143,7 +143,7 @@ func (d *discard) listenUpdates() {
 		case idxNode, ok := <-d.nodeChan:
 			if !ok {
 				if err := d.file.Close(); err != nil {
-					zap.L().Error("failed to close discard file", zap.Error(err))
+					zap.L().Error("Failed to close discard file", zap.Error(err))
 				}
 				return
 			}
@@ -163,12 +163,12 @@ func (d *discard) setTotal(fid uint32, totalSize uint32) {
 	defer d.Unlock()
 
 	if _, ok := d.location[fid]; ok {
-		zap.L().Info("skip setting total size due to duplicate setting", zap.Uint32("fid", fid))
+		zap.L().Info("Skip setting total size due to duplicate setting", zap.Uint32("fid", fid))
 		return
 	}
 	offset, err := d.alloc(fid)
 	if err != nil {
-		zap.L().Error("discard file allocate err", zap.Uint32("fid", fid), zap.Error(err))
+		zap.L().Error("Discard file allocate err", zap.Uint32("fid", fid), zap.Error(err))
 		return
 	}
 
@@ -176,10 +176,10 @@ func (d *discard) setTotal(fid uint32, totalSize uint32) {
 	binary.LittleEndian.PutUint32(buf[:4], fid)
 	binary.LittleEndian.PutUint32(buf[4:8], totalSize)
 	if _, err = d.file.Write(buf, offset); err != nil {
-		zap.L().Error("set total size in discard file err", zap.Uint32("fid", fid), zap.Error(err))
+		zap.L().Error("Set total size in discard file err", zap.Uint32("fid", fid), zap.Error(err))
 		return
 	}
-	zap.L().Info("set total size in discard file",
+	zap.L().Info("Set total size in discard file",
 		zap.Uint32("fid", fid), zap.Uint32("totalSize", totalSize))
 }
 
@@ -205,7 +205,7 @@ func (d *discard) incr(fid uint32, delta int) (newDiscardSize int) {
 
 	offset, err := d.alloc(fid)
 	if err != nil {
-		zap.L().Error("discard file allocate err", zap.Uint32("fid", fid), zap.Error(err))
+		zap.L().Error("Discard file allocate err", zap.Uint32("fid", fid), zap.Error(err))
 		return
 	}
 
@@ -214,21 +214,21 @@ func (d *discard) incr(fid uint32, delta int) (newDiscardSize int) {
 		buf = make([]byte, 4)
 		offset += 8
 		if _, err = d.file.Read(buf, offset); err != nil {
-			zap.L().Error("read discard size in discard file err", zap.Uint32("fid", fid), zap.Error(err))
+			zap.L().Error("Read discard size in discard file err", zap.Uint32("fid", fid), zap.Error(err))
 			return
 		}
 
 		discardSize := binary.LittleEndian.Uint32(buf)
 		newDiscardSize = int(discardSize + uint32(delta))
 		binary.LittleEndian.PutUint32(buf, uint32(newDiscardSize))
-		zap.L().Info("increase discard size", zap.Uint32("fid", fid),
+		zap.L().Info("Increase discard size", zap.Uint32("fid", fid),
 			zap.Uint32("discardSize", discardSize), zap.Int("delta", delta))
 	} else {
 		buf = make([]byte, discardRecordSize)
 	}
 
 	if _, err = d.file.Write(buf, offset); err != nil {
-		zap.L().Error("increase discard size in discard file err", zap.Uint32("fid", fid), zap.Error(err))
+		zap.L().Error("Increase discard size in discard file err", zap.Uint32("fid", fid), zap.Error(err))
 	}
 	return
 }
