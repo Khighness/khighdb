@@ -110,10 +110,10 @@ func Start(config *ServerConfig) *KhighDBServer {
 
 // listen starts the database server to listen for connections.
 func (server *KhighDBServer) listen() {
+	zap.S().Infof("KhighDB server is listening on %s", fmt.Sprintf("%s:%v", config.host, config.port))
 	if err := server.svr.ListenAndServe(); err != nil {
 		zap.S().Fatalf("KhighDB server startup failed, error: %v", err)
 	}
-	zap.S().Infof("KhighDB server is listening on %s", fmt.Sprintf("%s:%v", config.host, config.port))
 }
 
 // stop stops the database server.
