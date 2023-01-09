@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/tidwall/redcon"
+	"go.uber.org/zap"
 
 	"github.com/Khighness/khighdb/database"
 )
