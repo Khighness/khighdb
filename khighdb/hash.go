@@ -395,7 +395,7 @@ func (db *KhighDB) HIncrBy(key, field []byte, delta int64) (int64, error) {
 
 // HRandField returns the fields from the hash value stored at key.
 //  The count argument controls the returned data in following ways:
-//  - count = 0: Return a random field.
+//  - count = 0: Return nil.
 //  - count > 0: Return an array of distinct fields.
 //  - count < 0: The returned fields is allowed to return the same field multiple times.
 func (db *KhighDB) HRandField(key []byte, count int, withValues bool) ([][]byte, error) {
