@@ -11,7 +11,7 @@ import (
 // MaxMetaSize defines the max size of entry header.
 //	The structure of entry header is as follows:
 //	+-----------+-----------+-----------+-----------+-----------+
-//	|   crc32   |    type   |  KeySize  | ValueSize | expiredAt |
+//	|   crc32   |    type   |  keySize  | valueSize | expiredAt |
 //	+-----------+-----------+-----------+-----------+-----------+
 //	|   uint32  |    byte   |   uint32  |   uint32  |   int64   |
 //	+-----------+-----------+-----------+-----------+-----------+
