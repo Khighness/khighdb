@@ -244,6 +244,7 @@ func (db *KhighDB) loadIndexFromLogFiles() error {
 	return nil
 }
 
+// updateIndexTree updates an index node according to the original node pos and the specified data type.
 func (db *KhighDB) updateIndexTree(idxTree *art.AdaptiveRadixTree, ent *storage.LogEntry,
 	pos *valuePos, sendDiscard bool, dataType DataType) error {
 
@@ -270,6 +271,7 @@ func (db *KhighDB) updateIndexTree(idxTree *art.AdaptiveRadixTree, ent *storage.
 	return nil
 }
 
+// getIndexNode gets the index node according to the given key.
 func (db *KhighDB) getIndexNode(idxTree *art.AdaptiveRadixTree, key []byte) (*indexNode, error) {
 	rawValue := idxTree.Get(key)
 	if rawValue == nil {
@@ -282,6 +284,7 @@ func (db *KhighDB) getIndexNode(idxTree *art.AdaptiveRadixTree, key []byte) (*in
 	return idxNode, nil
 }
 
+// getVal gets the value according to the given key.
 func (db *KhighDB) getVal(idxTree *art.AdaptiveRadixTree, key []byte, dataType DataType) ([]byte, error) {
 	rawValue := idxTree.Get(key)
 	if rawValue == nil {
