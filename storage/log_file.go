@@ -23,7 +23,7 @@ var (
 	ErrEndOfEntry = errors.New("logfile: end of entry in log file")
 	// ErrUnsupportedIOType represents unsupported io type, only support mmap and fileIO now.
 	ErrUnsupportedIOType = errors.New("logfile: unsupported io type")
-	// ErrUnsupportedLogFileType represents unsupported log file type, only WAL and ValueLog now.
+	// ErrUnsupportedLogFileType represents unsupported log file type, only support WAL and ValueLog now.
 	ErrUnsupportedLogFileType = errors.New("logfile: unsupported log file type")
 )
 
